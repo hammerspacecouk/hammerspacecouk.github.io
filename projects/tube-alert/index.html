@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TubeAlert - Hammerspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#222222">
+
+    <meta property="og:site_name" content="hammerspace" />
+    <meta property="og:title" content="hammerspace - Making web based experiences" />
+    <meta property="og:url" content="http://www.hammerspace.co.uk/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Making web based experiences" />
+
+    <link rel="canonical" href="http://www.isinanalytics.com/" />
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400" rel="stylesheet">
+    <style>
+        body {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 16px;
+            font-family: 'Lato', sans-serif;
+            line-height: 1.4;
+        }
+        @media (max-width: 800px) {
+            .code {
+                padding-right: 32px;
+            }
+        }
+        .gist .blob-wrapper.data {
+            max-height:300px;
+            overflow:auto;
+        }
+        img {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<h1>Converting TubeAlert to serverless architecture, including push notifications - a case study</h1>
+
+<p>
+    There are many steps to this project. You may only be interested in a small part,
+    so here’s the table of contents.
+</p>
+<ul>
+    <li><a href="#introduction">Introduction to the TubeAlert web app</a></li>
+    <li><a href="#model">Identifying the underlying domain model</a></li>
+    <li><a href="#workflows">Identifying the workflows</a></li>
+    <li><a href="#new-model">Changes to the domain model</a></li>
+    <li><a href="#infrastructure">Infrastructure</a></li>
+    <li><a href="#lambda">Building the new workflow with Lambda</a></li>
+    <li><a href="#react">Building a basic webpage with React on S3</a></li>
+    <li><a href="#monitoring">Monitoring with Cloudwatch</a></li>
+    <li><a href="#offline">Supporting Offline first mode with Service Worker</a></li>
+    <li><a href="#notifications">Supporting Notifications with Service Worker, Lambda and DynamoDb</a></li>
+    <li><a href="#progressive-enhancement">Using server rendering with React for Progressive Enhancement (via Lambda)</a></li>
+    <li><a href="#archive">Supporting Archival data with DynamoDB</a></li>
+</ul>
+
+<h2 id="introduction">Introduction to the TubeAlert web app</h2>
+<p>
+    <a href="https://www.tubealert.co.uk">https://www.tubealert.co.uk</a>
+    is a simple application intended to be a super-fast way of identifying
+    the current state of the London Underground system. The site loads with just the information in a
+    quick and uncluttered form. It is also possible (where supported) to subscribe to alerts and
+    be notified when your line has a problem, during the times you care about. (add gifs).
+</p>
+<p>
+    Only Google Chrome is currently supported, although Firefox is now capable of receiving notifications
+    so that needs updating.
+</p>
+<p>
+    Currently the application is hosted on a Virtual Private Server costing $5 per month.
+    Can this be changed?
+</p>
+
+<h2 id="model">Identifying the underlying domain model</h2>
+<p>
+    The data that exists currently is modelled and stored in a relational database.
+    (<a href="https://github.com/djmarland/tube/tree/master/src/TubeService/Data/Database/Entity">
+    Entity list
+    </a>)
+</p>
+
+<p>
+    <img src="tubealertoriginalschema.svg" alt="Tube Alert Schema" />
+</p>
+
+<h3>Line</h3>
+<p>
+    This is a fixed set of lines on the London Underground with information about their name,
+    colour and url-key. There is a denormalized column in here that is a foreign key to the most
+    recent status update, to save having to calculate this on the fly from the Status table.
+</p>
+<h3>Status</h3>
+<p>
+    This entity is populated by the statuses for each line provided by TFL. Nothing is deleted
+    here so an archive is kept. This will get very big and slow to query for the most recent
+    status per line, hence the denormalized column in the Line table.
+</p>
+
+<h3>Subscription</h3>
+<p>
+    This is a subscription window for a user. Each continuous chunk of time for a single line
+    counts as a separate subscription. This means a single user can have many subscriptions.
+    If this was a complete relational model that would give rise to a User entity, but that
+    has not been done here. A User’s subscription credentials are being replicated in every
+    subscription row. This is acceptable as there is no need to make any changes to those
+    details and therefore cascade them.
+</p>
+<h3>Notification</h3>
+<p>
+    Due to the way web push notifications work (at least did at the time of build) very little
+    data could be sent directly to the user. All that happens in the user’s service worker is
+    told that a notification exists. It then has to make a request to find out what the contents
+    of that notification should be.
+</p>
+<p>
+    The Notification entity therefore stores the contents of those notifications. A request is made
+    and the latest unprocessed notification for that use is found. The User ID is again stored
+    directly in this table so this table is completely isolated.
+</p>
+<h3>TFLLine & TFLStatus</h3>
+<p>
+    These are virtual domain objects to make sense of the data retrieved from the TFL API. They are
+    not persisted.
+</p>
+<h2 id="workflows">Identifying the workflows</h2>
+<p>
+    There are several discrete pieces of work that application has to do.
+</p>
+<h3>Fetching data</h3>
+<p>
+    The first (and obviously most important) task is to fetch the source data from TFL.
+    TFL offer a lot of free Open Data for this purpose, which is a fantastic resource.
+    Periodically we need to fetch the latest tube status data from the available JSON feeds.
+    This happens every minute on a Cron job.
+</p>
+<p>
+    <img src="tubealertminute.svg" alt="Workflow for fetching data every minute" />
+</p>
+<p>
+    Overall, the data is fetched and stored, and if a status has changed the subscribers are informed.
+    There are API calls to TFL and to Google (as only Chrome is supported presently).
+    There are also several database calls. Can any of this be simplified or separated? This all happens
+    currently via the following
+    <a href="https://github.com/hammerspacecouk/tubealert.co.uk-php/blob/master/src/ConsoleBundle/Command/StatusUpdateCommand.php">code.</a>
+    <div class="code">
+        <script src="https://gist.github.com/djmarland/40b40cb39167a5889a736fc8f3fa2b79.js"></script>
+    </div>
+</p>
+<h3>Hourly</h3>
+<p>
+    At the start of every new hour we need to check if any subscriptions windows have just come into
+    action. If they have and their line currently has a problem, we notify that user. This runs via
+    an hourly Cron job at 1 minute past the hour.
+</p>
+<p>
+    <img src="tubealerthour.svg" alt="Workflow for fetching data every hour" />
+</p>
+
+<h3>Subscribing</h3>
+<p>
+    A user can only subscribe to one line at a time. They may subscribe to many time windows in
+    one go though, so that has to be reconstructed into a series of separate subscriptions.
+    As this is user input, there must be some validation performed on the incoming data.
+</p>
+
+<h3>Unsubscribing</h3>
+<p>
+    This workflow simply deletes all subscriptions for a user
+</p>
+
+<h3>Reading</h3>
+<p>
+    There are some reading workflows, to generate pages and feeds for notifications:
+</p>
+<ul>
+    <li>Find all lines with their latest status</li>
+    <li>Find latest notification for a user</li>
+    <li>Find all subscriptions for a user</li>
+</ul>
+
+<h2 id="new-model">Changes to the domain model</h2>
+<p>
+    Analysing the domain model and the workflows we need, we probably don’t need the data to be
+    fully relational. There is already some denormalisation happening and there are no complex
+    queries that strictly need the data in this relational format.
+</p>
+
+<h2 id="infrastructure">Infrastructure</h2>
+<h3>Current</h3>
+<p>
+    Everything is hosted on one machine with no backup and no redundancy.
+    It is built in PHP and Symonfy.
+</p>
+<h3>Proposed</h3>
+<p>
+    No server. Automatic backup and redundancy. Free. Lambda, so NodeJS.
+    We can also break up some of the workflows.
+</p>
+
+<h2 id="new-workflow">New workflows</h2>
+<p>Chrome no longer needs Google? Chrome no longer needs separate server call?</p>
+
+<h2 id="lambda">Building a new workflow with Lambda</h2>
+<p>
+    Let’s start with simple Lambda functions to get the latest data from TFL and store
+    it in static JSON in S3. Working with Apex (ENV variables and lambda-local).
+</p>
+<p>
+    Just to see something working a quick page was thrown together with simple JavaScript fetching
+    the file that was saved to S3 by the Lambda. This was uploaded manually to S3 so it was on the same domain
+    as the JSON file. (setting up web hosting)
+</p>
+<div class="code">
+    <script src="https://gist.github.com/djmarland/05fdbdb9bda7bf335a9c93fbbb001879.js"></script>
+</div>
+<p>
+    This works and shows the list of lines, with those currently disrupted shown by an <strong>X</strong>
+</p>
+<p>
+    <img src="1st-site.png" alt="The first, very basic version of TubeAlert" />
+</p>
+
+<h2 id="react">Building a basic webpage with React on S3</h2>
+<p>
+    The application needs to be a bit more complicated that this. So, here we build a small react application,
+    host it on S3 (deploy process). Ensure cache-headers are set correctly. Sass and build process.
+</p>
+
+<h2 id="monitoring">Monitoring with Cloudwatch</h2>
+<p>
+    Monitor each time it runs, and check logs for errors. E-mail if there are errors?
+</p>
+
+<h2 id="offline">Supporting Offline first mode with Service Worker</h2>
+<p>
+    Here we add a service worker for offline. Need to go HTTPS (Cloudflare). Add manifest etc.
+</p>
+
+<h2 id="notifications">Supporting Notifications with Service Worker, Lambda and DynamoDb</h2>
+<p>
+    Now we have to support notifications we need to have a proper data store.
+    More Lambda, and DynamoDB
+</p>
+
+<h2 id="progressive-enhancement">Using server rendering with React for Progressive Enhancement (via Lambda)</h2>
+<p>
+    I would much prefer to have the website be super fast on initial load, and that can only
+    really happen if it renders on the server. Can the Lambda be used to generate a full static site?
+</p>
+
+<h2 id="archive">Supporting Archival data with DynamoDB</h2>
+<p>
+    We’ve been collecting all this data and throwing it away. Can we show historical records?
+    We need to store more data.
+</p>
+</body>
+</html>

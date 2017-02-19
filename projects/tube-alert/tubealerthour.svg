@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="358.72" height="744">
+  <style xmlns="http://www.w3.org/1999/xhtml"/>
+  <path fill="#FFF" d="M0 0h358.72v744H0z"/>
+  <path fill="#ffd966" d="M82 19h50c13.807 0 25 11.193 25 25s-11.193 25-25 25H82c-13.807 0-25-11.193-25-25s11.193-25 25-25z"/>
+  <path fill="none" stroke="#333" d="M82 19h50c13.807 0 25 11.193 25 25s-11.193 25-25 25H82c-13.807 0-25-11.193-25-25s11.193-25 25-25z" stroke-miterlimit="10" stroke-width="2"/>
+  <path fill-opacity="0" d="M67 36h81v17H67z"/>
+  <path fill-opacity="0" d="M67 36h81v17H67z"/>
+  <path fill-opacity="0" d="M88 37h39v16H88z"/>
+  <path fill-opacity="0" d="M88 37h39v16H88z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="21" y="13" transform="translate(67 36)">
+    Begin
+  </text>
+  <path fill="#d5a6bd" d="M320 126.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5"/>
+  <path fill="none" stroke="#333" d="M320 126.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5" stroke-miterlimit="10" stroke-width="2"/>
+  <path d="M266 126.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" fill-opacity="0"/>
+  <path fill="none" stroke="#333" d="M266 126.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" stroke-miterlimit="10"/>
+  <path fill-opacity="0" d="M277 138h34v17h-34z"/>
+  <path fill-opacity="0" d="M277 138h34v17h-34z"/>
+  <path fill-opacity="0" d="M284 139h21v16h-21z"/>
+  <path fill-opacity="0" d="M284 139h21v16h-21z"/>
+  <text fill="#FFF" font-family="Arial" font-size="14" font-weight="bold" x="7" y="13" transform="translate(277 138)">
+    DB
+  </text>
+  <image width="60" height="79" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABPCAYAAAC3SqYdAAABxUlEQVR4Xu2Z0U3DQBBEJxVAB0AF0AHQASVAJUAlUAJUAHQAFQAdQAWglXwoii5gW+xbKZn7TGzPzpv17UleaMvWYsv8yoY3PfGqhK8kfUm6pgFXGQ6zsXB9XHAwasNUazthiLRbGgLN75LetKhoq+agE3bCuQQ8h3P5/jzdcxgC7TlMgXZLU6S9S0Ok3dIQaO/SFGi3NEXauzRE2i0NgfYuTYF2S1OkvUtDpDe2pe8k7XQgngy/PXb++5R0lgU+u6Xjw/flxOLjI3ncl7KyDe9KeluTcs/Qu6QjSR8pbqEv8OeSbkYauJB0O/LaWZdlJ9yKipT3/qgw0t2f5WLCTZThMSmnpxtcKMOh9SzpcE0YL8O7OyGreZeShmMUPawp81RSb0TNc/XLXaThKCNMHa/U8ySpzeV/N7j6QNpwL2UsXfodbrCXU77PPFX12oVOOGqI0fM6FHMwHEzSW7kJVBgO7Xa4iHGFrirD7YARBxJ0VRlGTS6L2XAZekjYCUOgy2SccBl6SNgJQ6DLZJxwGXpI2AlDoMtknHAZekjYCUOgy2SccBl6SNgJQ6DLZJxwGXpI2AlDoMtknHAZekjYCUOgy2S+ASY9PVB+UlSgAAAAAElFTkSuQmCC" transform="translate(77 64.5)"/>
+  <path fill="#FFF" d="M25 114h164v65H25v-65z"/>
+  <g fill="none">
+    <path d="M25 114h164v65H25v-65z"/>
+    <path stroke="#333" d="M25 114h164v65H25v-65z" stroke-miterlimit="10" stroke-width="2"/>
+  </g>
+  <path fill-opacity="0" d="M36 130h143v33H36z"/>
+  <path fill-opacity="0" d="M36 130h143v33H36z"/>
+  <path fill-opacity="0" d="M49 131h117v32H49z"/>
+  <path fill-opacity="0" d="M49 131h117v32H49z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="13" y="13" transform="translate(36 130)">
+    Find
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="47" y="13" transform="translate(36 130)">
+    all
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="56" y="29" transform="translate(36 130)">
+    lines
+  </text>
+  <path fill-opacity="0" d="M102 131h64v16h-64z"/>
+  <text font-family="Arial" font-size="14" font-style="italic" font-weight="bold" x="66" y="13" transform="translate(36 130)">
+    disrupted
+  </text>
+  <image width="111" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG8AAAA8CAYAAABo3+Q5AAAB7UlEQVR4Xu2ay03DQBRF3wsFkA7IFtFEEGINW9iQDnAHNhVAE5AlBURRaAKypIuIjWeQHSLbym8TKXPF8cqSpej4nrnzseLGJZuAy5IDbsgTHgTIQ55wAsLoNA95wgkIo9M85AknIIxO85AnnIAwOs1DnnACwug0D3nCCQij0zzkCScgjE7zkCecgDA6zUOecALC6DQPecIJCKNLNG8+ngzL6PmJx6fzu+sP4bwPip60vPl4NgixfDbz2+qtex4ukdf4T1JeLS2E3NxG7aGKvG5xk5L3/T7rL37Co0UrNs0vyEtQ3kpaDJa5W79BjH+3yzGGvMTkfb1NsxAt70rbvK4jLxF5n6/TkbnlZjZoI0WL5lv/hV81MamZ/qC7x30/dnF/1Xn5oyVRyzMrzO2sA73TD/LaWR1N3gqimjajxcLMT/eNPKbNRKbNNka9YVmEzDxmuyQiL0F5K6RGYr0Wrl3IS1jeCq06pJexLNz8gUP69sXk6GvernVu+aWlfDH3G85560klLa9p4mQYYq/oeSj4ttlIlJC3bxf6X58jT9g88pAnnIAwOs1DnnACwug0D3nCCQij0zzkCScgjE7zkCecgDA6zUOecALC6DQPecIJCKPTPOQJJyCMTvOQJ5yAMDrNQ55wAsLoNE9Y3i8MzHo9y8qo/QAAAABJRU5ErkJggg==" transform="translate(159 116.5)"/>
+  <path fill="#FFF" d="M25 268h164v65H25v-65z"/>
+  <g fill="none">
+    <path d="M25 268h164v65H25v-65z"/>
+    <path stroke="#333" d="M25 268h164v65H25v-65z" stroke-miterlimit="10" stroke-width="2"/>
+  </g>
+  <path fill-opacity="0" d="M36 276h143v50H36z"/>
+  <path fill-opacity="0" d="M36 276h143v50H36z"/>
+  <path fill-opacity="0" d="M45 277h126v49H45z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="9" y="13" transform="translate(36 276)">
+    Find
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="42" y="13" transform="translate(36 276)">
+    subscriptions
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="26" y="29" transform="translate(36 276)">
+    where
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="70" y="29" transform="translate(36 276)">
+    Start
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="106" y="29" transform="translate(36 276)">
+    is
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="30" y="46" transform="translate(36 276)">
+    current
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="82" y="46" transform="translate(36 276)">
+    hour
+  </text>
+  <image width="60" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAABf0lEQVRoQ+2W4W3CMBSEjwnKCO0kLRN0hJYN2KB0AlaADbpByyR0BDoB1UO2FAFRYku+k8j5H8pz7t19zw4zTGzNJuYXNnzvxE2YRPiUdOiB0wWTURsmTZbsljZhE26UgC+tRsFevtZnmBS0b2lW0Hc70i8AsrlumD/pRzy/tfatkm99S4ex58Lmw2xfEIWvui5vbTga/y7scgEgT0Dh1uHy1oajgy8Ar8OtnCt2AN5H1laVMQw/AjiM7O4JwO/I2qoyhuFobAvgbaDD5nRDn2V4DOXmdJmGQ2sN4KOH8md6XjWmJZtYhKOneTqfDxcN/gGICTiWNF5byzTcR5lGlz3StyhT6SoMh+YKwCaN5DLd4LUTWryPPdK5wfytjbNLXSrD+d9UfJ+pS2WYarIrZsOy6EnCJkwKWiZjwrLoScImTApaJmPCsuhJwiZMClomY8Ky6EnCJkwKWiZjwrLoScImTApaJmPCsuhJwiZMClomY8Ky6EnCJkwKWiYzOcL/UFgoPfu2ry4AAAAASUVORK5CYII=" transform="translate(77 174)"/>
+  <image width="60" height="76" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABMCAYAAAAx3tSzAAABtUlEQVR4Xu2a4U0CQRCFHxVoCVqJWIEloB3YgVgBLUgHdCBWoiVoBZohu4bgkbsj7DeJ9/Ynt9yb9765WRJupomt2cT8yob/O/EswktJ35Ke6YCzDIfZWLg+LliM2jDV2iYMJe2WhoLmp6SHFoU26xw0YRNum4DP4bb5/t7d5zAUtM9hKmi3NJW0pzSUtFsaCtpTmgraLU0l7SkNJe2WhoL2lD530PPyH9Lhfbflg7jetd7OXUi9X+uhFcZuRhYfZo8FMfJWf7e3NhyFv46s8lZS7YCRX+3f3tpwVLCRdNdfym7HWtL9wL0nbSMMX0l6H1jdtaSPgXtP2kYYjsJeJC16KmxON/Qpw0MoN6dLGg6teM3h6QjlePUhrjdfFOEwclmez4sDV1+SogM+m7sFW7p66aKM0aVbuosySjfDcGg+SloV5A9lghPdvNMgn+F9U/WsjWcXXVmG66+pOJ/RlWUYNbkvZsNp0UPCJgwFnSZjwmnRQ8ImDAWdJmPCadFDwiYMBZ0mY8Jp0UPCJgwFnSZjwmnRQ8ImDAWdJmPCadFDwiYMBZ0mY8Jp0UPCJgwFnSYzOcI/Nmw6TRgBKUsAAAAASUVORK5CYII=" transform="translate(77 328.5)"/>
+  <path fill="#ffd966" d="M82 674h50c13.807 0 25 11.193 25 25s-11.193 25-25 25H82c-13.807 0-25-11.193-25-25s11.193-25 25-25z"/>
+  <path fill="none" stroke="#333" d="M82 674h50c13.807 0 25 11.193 25 25s-11.193 25-25 25H82c-13.807 0-25-11.193-25-25s11.193-25 25-25z" stroke-miterlimit="10" stroke-width="2"/>
+  <path fill-opacity="0" d="M67 691h81v17H67z"/>
+  <path fill-opacity="0" d="M67 691h81v17H67z"/>
+  <path fill-opacity="0" d="M95 692h26v16H95z"/>
+  <path fill-opacity="0" d="M95 692h26v16H95z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="28" y="13" transform="translate(67 691)">
+    End
+  </text>
+  <path fill="#FFF" d="M69.5 374.5h75L182 395l-37.5 20.5h-75L32 395l37.5-20.5z"/>
+  <path fill="none" stroke="#333" d="M69.5 374.5h75L182 395l-37.5 20.5h-75L32 395l37.5-20.5z" stroke-miterlimit="10" stroke-width="2"/>
+  <path fill-opacity="0" d="M43 379h129v33H43z"/>
+  <path fill-opacity="0" d="M43 379h129v33H43z"/>
+  <path fill-opacity="0" d="M79 380h84v32H79z"/>
+  <path fill-opacity="0" d="M79 380h84v32H79z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="36" y="13" transform="translate(43 379)">
+    For
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="62" y="13" transform="translate(43 379)">
+    each
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="23" y="29" transform="translate(43 379)">
+    subscription
+  </text>
+  <path fill="#FFF" d="M25 449h164v65H25v-65z"/>
+  <g fill="none">
+    <path d="M25 449h164v65H25v-65z"/>
+    <path stroke="#333" d="M25 449h164v65H25v-65z" stroke-miterlimit="10" stroke-width="2"/>
+  </g>
+  <path fill-opacity="0" d="M36 457h143v50H36z"/>
+  <path fill-opacity="0" d="M36 457h143v50H36z"/>
+  <path fill-opacity="0" d="M56 458h143v49H56z"/>
+  <path fill-opacity="0" d="M56 458h143v49H56z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="20" y="13" transform="translate(36 457)">
+    Generate
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="84" y="13" transform="translate(36 457)">
+    a
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="96" y="13" transform="translate(36 457)">
+    new
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" y="29" transform="translate(36 457)">
+    notification
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="80" y="29" transform="translate(36 457)">
+    and
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="108" y="29" transform="translate(36 457)">
+    store
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="67" y="46" transform="translate(36 457)">
+    it
+  </text>
+  <path fill="#FFF" d="M25 554h164v65H25v-65z"/>
+  <g fill="none">
+    <path d="M25 554h164v65H25v-65z"/>
+    <path stroke="#333" d="M25 554h164v65H25v-65z" stroke-miterlimit="10" stroke-width="2"/>
+  </g>
+  <path fill-opacity="0" d="M36 570h143v33H36z"/>
+  <path fill-opacity="0" d="M36 570h143v33H36z"/>
+  <path fill-opacity="0" d="M37 571h141v32H37z"/>
+  <path fill-opacity="0" d="M37 571h141v32H37z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="1" y="13" transform="translate(36 570)">
+    Send
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="39" y="13" transform="translate(36 570)">
+    all
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="59" y="13" transform="translate(36 570)">
+    notifications
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="10" y="29" transform="translate(36 570)">
+    to
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="28" y="29" transform="translate(36 570)">
+    browser
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="86" y="29" transform="translate(36 570)">
+    vendor
+  </text>
+  <image width="60" height="68" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABECAYAAADdjVbeAAABnElEQVR4Xu2Z0U3DQBBEJxVACaESoAJKCHRAB0AFtAAd0EFCJVACVADa6Iyi4Mh2pH0rxXOf8cazM299F8ULzWwtZuZXNnzqxKsIP0r6kfREB1xlOMzGwvVxwWbUhqnRNmEoaY80FDS/S3rTotBWnYMmbMK5Cfgczs337+4+h6GgfQ5TQXukqaS9S0NJn+xIX7X/rvZz3LQP4nrfes8KPnukw9jlxObD7KEgJt7qf3m24Wh8PbHLa0ndBEz86nB5tuHo4E3SzXAr24pXSbcja48qIwwvJX2M7O5C0ufI2qPKCMPR2Iuk1UCH6XRDnzI8hnI6XdJwaMXrlYcDlOOVS1xPXxThMHLens+zPVffkmICvtLdgiPdeemjjNGlR7qPMkq3wnBo3kt6bsjv2g5OTPNWg3yGd011Z208u+iqMtz9morzGV1VhlGTu2I2XBY9JGzCUNBlMiZcFj0kbMJQ0GUyJlwWPSRswlDQZTImXBY9JGzCUNBlMiZcFj0kbMJQ0GUyJlwWPSRswlDQZTImXBY9JGzCUNBlMrMj/AtCijJFfkhrFAAAAABJRU5ErkJggg==" transform="translate(77 411)"/>
+  <image width="60" height="74" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABKCAYAAADnhzeuAAABuUlEQVR4Xu2Z0U3DQBBEJxVAB0AF0AHQASVAJUAlUAJUAHQAFQAdkApAK/lQFF3Atti3Epn7TGzPzpv17UleaMvWYsv8yob/e+JVCV9J+pR0TQOuMhxmY+H6uOBg1Iap1nbCEGm3NASa3yW9aVHRVs1BJ+yEcwl4Dufy/X665zAE2nOYAu2Wpkh7l4ZIu6Uh0N6lKdBuaYq0d2mItFsaAp2+S99J2umYORl+e+z8t5R0lgUg+x2Ob0iXE4uP701xX8rKNrwr6W1Dyj1D75KOJH2kuIU+Zp1Luhlp4ELS7chrZ12WnXArKlLe+6XCSHd/losJN1GGx6Scnm5woQyH1rOkww1hvAzv7oSs5l1KGo5R9LChzFNJvRE1z9UPd5GGo4wwdbxWz5OkNpf/3OD6A2nDvZSxdOl3uMFeTfk+81TVaxc64aghRs/rUMzBcDBJb+UmUGE4tNvhIsYVuqoMtwNGHEjQVWUYNbkqZsNl6CFhJwyBLpNxwmXoIWEnDIEuk3HCZeghYScMgS6TccJl6CFhJwyBLpNxwmXoIWEnDIEuk3HCZeghYScMgS6TccJl6CFhJwyBLpP5AqjbOEujeIArAAAAAElFTkSuQmCC" transform="translate(77 509.5)"/>
+  <image width="60" height="89" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABZCAYAAABixUebAAAB30lEQVR4Xu2a4TEEQRCF30VABoiADJCBEIgEkRACESADIkAGLgKqq3bU1dUcu1v66yr35ufd7r553+vtnh+70JatxZb5lQ3/98SrEr6S9CnpmgZcZTjMxsL1ccHBqA1Tpe2EIdIuaQg03yXdtKhoq+agE3bCuQQ8h3P5fj/dcxgC7TlMgXZJU6TdpSHSLmkItLs0BdolTZF2l4ZIu6Qh0O7SFGiXNEXaXRoi7ZKGQLtLU6Bd0hRpd2mItEsaAu0uTYF2SVOks7v0naSdjpmT4bfHzn9LSWdZALINxyeGlxM3H58jxn0pK9vwrqS3DSn3DL1LOpL0keIW+tbxXNLNSAMXkm5HXjvrsuyE26Yi5b1fdhjp7s9yMeEmyvCYlNPTDS6U4dB6lnS4IYyX4d2dkNW8S0nDMYoeNmzzVFJvRM1z9cNdpOHYRpg6XtvPk6Q2l//c4PoDacO9lLF06Xe4wV5N+T7zVNUrFzrh2EOMntdhMwfDwSS9lJtAheHQboeLGFfoqjLcDhhxIEFXlWHU5KqYDZehh4SdMAS6TMYJl6GHhJ0wBLpMxgmXoYeEnTAEukzGCZehh4SdMAS6TMYJl6GHhJ0wBLpMxgmXoYeEnTAEukzGCZehh4SdMAS6TOYLBrZHWp1SXYIAAAAASUVORK5CYII=" transform="translate(77 614.5)"/>
+  <path fill="#d5a6bd" d="M320 280.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5"/>
+  <path fill="none" stroke="#333" d="M320 280.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5" stroke-miterlimit="10" stroke-width="2"/>
+  <path d="M266 280.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" fill-opacity="0"/>
+  <path fill="none" stroke="#333" d="M266 280.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" stroke-miterlimit="10"/>
+  <path fill-opacity="0" d="M277 292h34v17h-34z"/>
+  <path fill-opacity="0" d="M277 292h34v17h-34z"/>
+  <path fill-opacity="0" d="M284 293h21v16h-21z"/>
+  <path fill-opacity="0" d="M284 293h21v16h-21z"/>
+  <text fill="#FFF" font-family="Arial" font-size="14" font-weight="bold" x="7" y="13" transform="translate(277 292)">
+    DB
+  </text>
+  <image width="111" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG8AAAA8CAYAAABo3+Q5AAAB7UlEQVR4Xu2ay03DQBRF3wsFkA7IFtFEEGINW9iQDnAHNhVAE5AlBURRaAKypIuIjWeQHSLbym8TKXPF8cqSpej4nrnzseLGJZuAy5IDbsgTHgTIQ55wAsLoNA95wgkIo9M85AknIIxO85AnnIAwOs1DnnACwug0D3nCCQij0zzkCScgjE7zkCecgDA6zUOecALC6DQPecIJCKNLNG8+ngzL6PmJx6fzu+sP4bwPip60vPl4NgixfDbz2+qtex4ukdf4T1JeLS2E3NxG7aGKvG5xk5L3/T7rL37Co0UrNs0vyEtQ3kpaDJa5W79BjH+3yzGGvMTkfb1NsxAt70rbvK4jLxF5n6/TkbnlZjZoI0WL5lv/hV81MamZ/qC7x30/dnF/1Xn5oyVRyzMrzO2sA73TD/LaWR1N3gqimjajxcLMT/eNPKbNRKbNNka9YVmEzDxmuyQiL0F5K6RGYr0Wrl3IS1jeCq06pJexLNz8gUP69sXk6GvernVu+aWlfDH3G85560klLa9p4mQYYq/oeSj4ttlIlJC3bxf6X58jT9g88pAnnIAwOs1DnnACwug0D3nCCQij0zzkCScgjE7zkCecgDA6zUOecALC6DQPecIJCKPTPOQJJyCMTvOQJ5yAMDrNQ55wAsLoNE9Y3i8MzHo9y8qo/QAAAABJRU5ErkJggg==" transform="translate(159 270.5)"/>
+  <path fill="#d5a6bd" d="M320 461.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5"/>
+  <path fill="none" stroke="#333" d="M320 461.5v35q0 5-27 5t-27-5v-35q0-5 27-5t27 5" stroke-miterlimit="10" stroke-width="2"/>
+  <path d="M266 461.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" fill-opacity="0"/>
+  <path fill="none" stroke="#333" d="M266 461.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5m-54 2.5q0 5 27 5t27-5" stroke-miterlimit="10"/>
+  <path fill-opacity="0" d="M277 473h34v17h-34z"/>
+  <path fill-opacity="0" d="M277 473h34v17h-34z"/>
+  <path fill-opacity="0" d="M284 474h21v16h-21z"/>
+  <path fill-opacity="0" d="M284 474h21v16h-21z"/>
+  <text fill="#FFF" font-family="Arial" font-size="14" font-weight="bold" x="7" y="13" transform="translate(277 473)">
+    DB
+  </text>
+  <image width="111" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG8AAAA8CAYAAABo3+Q5AAAB6ElEQVR4Xu2aQU7CQBhG/5luDLdwSfQOhqgHcImuvAGewHIDvQEsdK17SfAE4oI93oAT8BsEA7YWXLXzxddlM8l8+d686bRpMC7ZBoJscoIb8IQXAfCAJ9yAcHTMA55wA8LRMQ94wg0IR8c84Ak3IBwd84An3IBwdMwDnnADwtExD3jCDQhHxzzgCTcgHB3zgCfcgHB0zAOecAPC0TGvAG/68PJkMby1DuL94UVnnjJb4BXhPY7GZnbibnML3ju+PBumChB4FfC2bs/cPE8RIvD2w1uNcJ/E6Dft7vnSzCQu4O2C52bF35LdfJwF76cAEXg7zVvSM3MLpV/LVxCz63a3M2tKwxK86cMot2C3TQVKa94t9VYcSyaa2yDG2G8CIvB2rpYCvF/2KTcfZiHLk4CX1sqvP810/aqwPqVU6PZ1gHmOMes1Ae27FZ55fz1tbsa9xrDIObDUL9beGX+atxnuZu9ZWPRSgIZ5FRhL8Nw+zCw/ujod7CVf8wC2zaptM2FomFdl3vLDtIVJqxXv+DBd81byn6Zj2xSmDTzgCTcgHB3zgCfcgHB0zAOecAPC0TEPeMINCEfHPOAJNyAcHfOAJ9yAcHTMA55wA8LRMQ94wg0IR8c84Ak3IBwd84An3IBwdMwThvcJWlBzPRxfDAoAAAAASUVORK5CYII=" transform="translate(184.5 451.5)"/>
+  <path fill="#6aa84f" d="M252 566.5h82v40q-20.5-10-41 0t-41 0v-40z"/>
+  <path fill="none" stroke="#000" d="M252 566.5h82v40q-20.5-10-41 0t-41 0v-40z" stroke-miterlimit="10" stroke-width="2"/>
+  <path fill-opacity="0" d="M263 578h61v17h-61z"/>
+  <path fill-opacity="0" d="M263 578h61v17h-61z"/>
+  <path fill-opacity="0" d="M269 579h49v16h-49z"/>
+  <path fill-opacity="0" d="M269 579h49v16h-49z"/>
+  <text fill="#FFF" font-family="Arial" font-size="14" font-weight="bold" x="6" y="13" transform="translate(263 578)">
+    Google
+  </text>
+  <image width="97" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGEAAAA8CAYAAAB2FtSKAAABzklEQVR4Xu2aPVLCUBRG703BuCt3wIyVQ2kpla7AuANslBIqLKNuAFcg7gB3wApyHf6cSLRjfMe8LwuAL+fkhEwGNx3JCXjyBRpgkgC4CCRBEgAEABNUgiQACAAmqARJABAATFAJkgAgAJigEiQBQAAwQSVIAoAAYIJKkAQAAcAElSAJAAKACSpBEgAEABNUgiQACAAmdLaE4WO/Mre3Xq+4G51VKwDrXyd0VsLlrD9391MzW4XH1cP585QqIgcJG/ZhtjSPkigjGwmNChZ1+PV4UM0pZWQiIcwO/ucWZvMIvyXIyELCWsH2CPOfZVyMB9UyVRktCcNZvzT3m1SDjvW90QD+vYO9ktapT+ptGX8uI0sJ7R7MImIaVpQICce6ElN/TuMRdf1k9HW077/xVEdxlQL+flQ2vwmHJxoRr7srP/lTUhYSmlWGxXtsr/zk8LMqYfdg9GFWl/eDl0nqW+Xh93e/hDAs/M6XsHmBF7bonRQjvcCjtQ/c09nbEZB1fq+yJeE/EQBs1e1IEgAEABNUgiQACAAmqARJABAATFAJkgAgAJigEiQBQAAwQSVIAoAAYIJKkAQAAcAElSAJAAKACSpBEgAEABNUAkDCJ/uRhD3vJtoEAAAAAElFTkSuQmCC" transform="translate(184.5 556.5)"/>
+  <path fill="#FFF" d="M69.5 204h75l37.5 20.5-37.5 20.5h-75L32 224.5 69.5 204z"/>
+  <path fill="none" stroke="#333" d="M69.5 204h75l37.5 20.5-37.5 20.5h-75L32 224.5 69.5 204z" stroke-miterlimit="10" stroke-width="2"/>
+  <path fill-opacity="0" d="M43 216h129v17H43z"/>
+  <path fill-opacity="0" d="M43 216h129v17H43z"/>
+  <path fill-opacity="0" d="M65 217h86v16H65z"/>
+  <path fill-opacity="0" d="M65 217h86v16H65z"/>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="22" y="13" transform="translate(43 216)">
+    For
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="48" y="13" transform="translate(43 216)">
+    each
+  </text>
+  <text font-family="Arial" font-size="14" font-weight="bold" x="84" y="13" transform="translate(43 216)">
+    line
+  </text>
+  <image width="60" height="60" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAABe0lEQVRoQ+2W4W3CMBSEjwnoCGUS2gk6QmEDNgAm6ArtBt2gZRIYASYAPWRLqCVKbMl3Ejn/i/Kce3ffc5IJRrYmI/MLG3504iZswg+WgGqkzylHuj5dMBm1YdbJMWFS0h5pUtCyX0sTNuFGCbR+S78AyON7a+E3XcT9e2vXyG/zMxzG5oXNh9muIAof9b+cQfinsMtXAHkCCrf2l7c2HB18A3jrb+Va8QVgMbC2qoxh+BnAfmB3MwCHgbVVZQzD0dgngPeeDpvTDX2W4SGUm9NlGg6tDYB1B+Vtul81piWbWISjp6d0Pqd/GjwBiAk4ljReW8s03EWZRpc90vcoU+kqDIfmCsBHGslleoPXTmjxPvZI5wbztzbOLnWpDOe/qfg+U5fKMNXkrZgNy6InCZswKWiZjAnLoicJmzApaJmMCcuiJwmbMClomYwJy6InCZswKWiZjAnLoicJmzApaJmMCcuiJwmbMClomYwJy6InCZswKWiZzOgIXwCdbiY98uNDOgAAAABJRU5ErkJggg==" transform="translate(77 238)"/>
+</svg>
