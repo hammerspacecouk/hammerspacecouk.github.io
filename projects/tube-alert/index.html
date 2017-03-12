@@ -59,6 +59,18 @@
     <li><a href="#progressive-enhancement">Using server rendering with React for Progressive Enhancement (via Lambda)</a></li>
     <li><a href="#archive">Supporting Archival data with DynamoDB</a></li>
 </ul>
+<p>
+    Technologies used in this project:
+</p>
+<ul>
+    <li>APEX</li>
+    <li>Webpack</li>
+    <li>Yarn</li>
+    <li>Node.js</li>
+    <li>React</li>
+    <li>Redux</li>
+    <li>Troposphere (Python)</li>
+</ul>
 
 <h2 id="introduction">Introduction to the TubeAlert web app</h2>
 <p>
@@ -207,10 +219,19 @@
 <p>Chrome no longer needs Google? Chrome no longer needs separate server call?</p>
 
 <h2 id="lambda">Building a new workflow with Lambda</h2>
+
+<h3>Setting up the working environment</h3>
+<p>
+    I am using Windows 10, but most of these tools run best in a linux/bash environment.
+    Also, I'd rather not go installing things all over my personal machine. Luckily Windows 10 now
+    offers Bash on Ubuntu. So I can use all the tools, and they are all contained.
+</p>
+
 <p>
     Let’s start with simple Lambda functions to get the latest data from TFL and store
     it in static JSON in S3. Working with Apex (ENV variables and lambda-local).
 </p>
+<p>APEX</p>
 <p>
     Just to see something working a quick page was thrown together with simple JavaScript fetching
     the file that was saved to S3 by the Lambda. This was uploaded manually to S3 so it was on the same domain
@@ -231,6 +252,24 @@
     The application needs to be a bit more complicated that this. So, here we build a small react application,
     host it on S3 (deploy process). Ensure cache-headers are set correctly. Sass and build process.
 </p>
+<ul>
+    <li>Application structure</li>
+    <li>Webpack setup (dev & prod - to ensure React is NOT in dev mode)</li>
+    <li>Hashed filenames which are better for S3, and let us cache for a long time</li>
+    <li>Travis to deploy to S3 (awkwardness around S3 cache times)</li>
+    <li>Cloudflare (should cache, allow HTTPS and GZIP). Total page size once active = Xkb</li>
+</ul>
+
+<h2 id="cloudformation">Cloudformation (add ID and contents link)</h2>
+<p>
+    So far all the AWS changes have been direct in the console; just sort of figuring it out as we go along.
+    This isn't particularly robust. We need to be able to describe exactly the setup we need to power this infrastructure.
+    This way it is safe and reproducible. To do, this we'll use Cloudformation, Amazon's format for description cloud infrastructure.
+    This format is generally in JSON or YAML, but can be very verbose and difficult to build hand. Luckily we have troposphere
+</p>
+<p>
+    Because we are use hash
+</p>
 
 <h2 id="monitoring">Monitoring with Cloudwatch</h2>
 <p>
@@ -250,8 +289,9 @@
 
 <h2 id="progressive-enhancement">Using server rendering with React for Progressive Enhancement (via Lambda)</h2>
 <p>
+    There is a problem here in that /bakerloo-line doesn't work.
     I would much prefer to have the website be super fast on initial load, and that can only
-    really happen if it renders on the server. Can the Lambda be used to generate a full static site?
+    really happen if it renders on the server. Can a Lambda be used to generate a full static site?
 </p>
 
 <h2 id="archive">Supporting Archival data with DynamoDB</h2>
