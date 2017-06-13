@@ -1,0 +1,15 @@
+.island {
+    padding: $size-grid-unit;
+}
+
+.island-squashed {
+    padding: $size-grid-unit/2 $size-grid-unit;
+}
+
+.island-squeezed {
+    padding: $size-grid-unit/3 $size-grid-unit;
+}
+
+.islet {
+    padding: $size-grid-unit-small;
+}

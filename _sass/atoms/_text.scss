@@ -1,0 +1,46 @@
+
+// restore proper margins to semantic objects
+.text--prose {
+
+    // maximum readable line-length
+    @extend .g-central;
+    max-width: 700px;
+
+    p, ul, h1, h2, h3, h4, h5, h6, table, pre {
+        // when part of prose, elements get their spacing back
+        margin-bottom: $size-grid-unit;
+    }
+    p, ul, ol {
+        line-height: 1.7;
+        ul, ol {
+            margin-left: $size-grid-unit;
+        }
+    }
+
+    .prose__video {
+        max-width: 240px;
+        float: right;
+        margin-left: $size-grid-unit;
+        margin-bottom: $size-grid-unit;
+    }
+}
+
+.text--center {
+    text-align: center;
+}
+
+.text--left {
+    text-align: left;
+}
+
+.text--right {
+    text-align: right;
+}
+.text--truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.text--subtle {
+    opacity: 0.8;
+}

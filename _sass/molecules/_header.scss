@@ -1,0 +1,17 @@
+.header {
+  background: $color-header-bg;
+  padding: $size-grid-unit;
+  margin-bottom: $size-grid-unit * 2;
+}
+.header__link {
+  display: block;
+  @extend .g-central;
+  max-width: 240px;
+}
+.header__logo-path {
+  fill:$color-body-link;
+  transition: fill 1s linear;
+}
+.header__logo:hover .header__logo-path {
+  fill:$color-body-link-hover;
+}

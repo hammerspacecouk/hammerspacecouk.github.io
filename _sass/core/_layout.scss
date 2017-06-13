@@ -1,0 +1,8 @@
+$layout-max-width: 1280px;
+.layout--max {
+    max-width: $layout-max-width;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: $size-grid-unit;
+    padding-right: $size-grid-unit;
+}

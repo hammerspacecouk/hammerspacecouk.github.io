@@ -1,0 +1,48 @@
+{% include header.html %}
+<article>
+    <div class="grid">
+        <div class="g 1/3@xl 2/5@max">
+            <div class="post-intro">
+                {% if page.image %}
+                <p class="post-intro__image"><img src="{{ page.image }}" alt="" /></p>
+                {% endif %}
+                <h1 class="post-intro__title">{{ page.title }}</h1>
+                <p class="post-intro__date">{{ page.date | date_to_long_string }}</p>
+                {% if page.author %}
+                    <p class="post-intro__author">Author: <a href="https://twitter.com/{{ page.author.twitter }}">{{ page.author.name }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="g 2/3@xl 3/5@max">
+            <div>
+            <div class="text--prose">
+                {{ content }}
+            </div>
+            </div>
+        </div>
+    </div>
+</article>
+{% if page.previous or page.next %}
+<aside>
+    <nav><div class="pagination">
+        <h2 class="invisible">More</h2>
+        <div class="grid">
+            <div class="g 1/2@l">
+            {% if page.previous %}
+                <h3>Previous</h3>
+                <p><a href="{{ page.previous.url }}">{{ page.previous.title }}</a><br />
+                    <span class="text--subtle">{{ page.previous.date | date_to_long_string }}</span></p>
+            {% endif %}
+            </div>
+            <div class="g 1/2@l text--right">
+            {% if page.next %}
+                <h3>Next</h3>
+                <p><a href="{{ page.next.url }}">{{ page.next.title }}</a><br />
+                    <span class="text--subtle">{{ page.next.date | date_to_long_string }}</span></p>
+            {% endif %}
+            </div>
+        </div>
+    </div></nav>
+</aside>
+{% endif %}
+{% include footer.html %}

@@ -1,0 +1,16 @@
+.color-box--body,
+body {
+    background-color: $color-body-bg;
+    color: $color-body-text;
+    a {
+        color: $color-body-link;
+        &:hover,
+        &:active,
+        &:focus {
+            color: $color-body-link-hover;
+        }
+    }
+    .keyline {
+        border-color: $color-body-keyline;
+    }
+}

@@ -1,0 +1,17 @@
+---
+layout: page
+---
+{% include header.html %}
+<div class="grid">
+    <div class="g 1/3@xl 2/5@max">
+        <div>
+            <h1>{{ page.title }}</h1>
+        </div>
+    </div>
+    <div class="g 2/3@xl 3/5@max">
+        <div>
+            {{ content }}
+        </div>
+    </div>
+</div>
+{% include footer.html %}

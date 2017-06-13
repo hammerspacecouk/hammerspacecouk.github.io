@@ -1,0 +1,66 @@
+@import "../vendor/normalize";
+
+// this is the custom reset,
+// for setting default styles on semantic elements (not classes)
+
+*, *:before, *:after,
+h1, h2, h3, h4, h5, h6, p {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    min-height: 100%;
+}
+
+html {
+    // always make the scroll-bar visible (so no page jump between pages)
+    overflow-y: scroll;
+}
+
+body {
+    padding: 0;
+    font-family: $font-body;
+}
+
+img,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+ul, ol {
+    list-style-position: inside;
+    padding: 0;
+}
+ul {
+    list-style-type: square;
+}
+
+a {
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    &:hover,
+    &:active,
+    &:focus {
+        text-decoration: underline;
+    }
+}
+
+code {
+    font-family: monospace;
+    background: $color-grey-darkest;
+    padding: $size-grid-unit-tiny;
+}
+pre code {
+    display: block;
+    padding: $size-grid-unit-small $size-grid-unit;
+    border: solid 1px $color-body-keyline;
+    border-left-width: 8px;
+    width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    background: $color-grey-darkest;
+}

@@ -1,0 +1,11 @@
+.post-intro {
+  margin-bottom: $size-grid-unit;
+  &__title,
+  &__date,
+  &__author,
+  &__image {
+    margin-bottom: $size-grid-unit-small;
+  }
+}
+
+//5A429A
