@@ -10,16 +10,16 @@ h1, h2, h3, h4, h5, h6,
 .a {  @include font-sizes(28px, 32px);  }
 .b {  @include font-sizes(20px, 24px);  }
 .c {  @include font-sizes(20px, 24px);  }
-.d {  @include font-sizes(18px, 22px); letter-spacing: -0.5px; }
-.e {  @include font-sizes(16px, 22px);  }
+.d {  @include font-sizes(18px, 22px);  }
+.e {  @include font-sizes(16px, 22px); letter-spacing: 0.5px;  }
 .f {  @include font-sizes(14px, 18px);  }
 
 @include mq($from: m) {
     .a {  @include font-sizes(36px, 40px);  }
     .b {  @include font-sizes(24px, 28px);  }
     .c {  @include font-sizes(20px, 24px);  }
-    .d {  @include font-sizes(18px, 22px); letter-spacing: -0.5px; }
-    .e {  @include font-sizes(16px, 22px);  }
+    .d {  @include font-sizes(18px, 22px);  }
+    .e {  @include font-sizes(16px, 22px); letter-spacing: 0.5px;  }
     .f {  @include font-sizes(14px, 18px);  }
 }
 
@@ -27,8 +27,8 @@ h1, h2, h3, h4, h5, h6,
     .a {  @include font-sizes(48px, 52px);  }
     .b {  @include font-sizes(32px, 36px);  }
     .c {  @include font-sizes(24px, 28px);  }
-    .d {  @include font-sizes(20px, 24px); letter-spacing: -0.5px; }
-    .e {  @include font-sizes(16px, 22px);  }
+    .d {  @include font-sizes(20px, 24px);  }
+    .e {  @include font-sizes(16px, 22px); letter-spacing: 0.5px;  }
     .f {  @include font-sizes(14px, 18px);  }
 }
 

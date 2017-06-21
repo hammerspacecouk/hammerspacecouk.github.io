@@ -7,7 +7,7 @@ author:
 image: /assets/tube-alert/banner.svg
 ---
 
-[TubeAlert](https://tubealert.co.uk) is a blah balha Aliquam molestie ullamcorper enim, a accumsan velit dignissim a. Nulla ac lorem ut leo maximus condimentum. Integer vitae dolor nulla. Aenean vel est volutpat, dapibus dolor ut, ultricies nunc. Aliquam erat volutpat. Pellentesque eu neque pellentesque, vulputate dolor vitae, feugiat orci. Nunc lacus ligula, fringilla sed metus quis, bibendum convallis orci. Pellentesque a sapien tristique, placerat mi sit amet, venenatis est.
+[TubeAlert](https://tubealert.co.uk) is a web site intended to be a quick indicator of the status of the [London Underground](https://tfl.gov.uk/). It has a no-nonsense interface to give the answer immediately. It also allows the user to subscribe to a tube line and time slot to be alerted to any disruptions. It is all built on the open web from a simple webpage with progressive enhancement up to full progressive web app that can be added to the home screen. The goal was to build the full feature-set as cheaply as possible. This article documents the techniques and tactics used as well as the technologies in play such as NodeJS, React, Webpack, Travis, AWS Lambda/S3/DynamoDb/Cloudwatch.
 
 [![Screenshot of the TubeAlert website](/assets/tube-alert/screenshot.png)](https://tubealert.co.uk)
 
@@ -17,6 +17,23 @@ This is a long read, so here's a table of contents in case you just want to skip
 
 * TOC
 {:toc}
+
+## Data source
+This is all made possible because [TFL](https://tfl.gov.uk) have a fantastic policy of open data with a very good [API](https://tfl.gov.uk/info-for/open-data-users/). This is a great public service and enables a project such as this to exist due to offering data on the tube status, as well as many others (including Air Quality). I encourage you to [take a look](https://tfl.gov.uk/info-for/open-data-users/our-open-data) and see if you are inspired to build anything yourself.
+
+## Goals
+### Progressive Enhancement
+We believe in a universal web for all, and
+
+### Low cost
+AWS Free tier. This dictates using Dyanmo
+
+## Data model
+Would have preferred a SQL.
+
+
+## Infrastructure
+[![Infrastructure diagram](/assets/tube-alert/architecture.svg)](/assets/tube-alert/architecture.svg)
 
 ## todo
 - Briefly mention the goals and the previous site.
@@ -30,15 +47,7 @@ This is a long read, so here's a table of contents in case you just want to skip
 - Progressive enhancement
 
 
-## Open as app
-<video class="prose__video" muted loop controls>
-    <source
-        src="/assets/tube-alert/open-as-app.webm"
-        type="video/webm">
-    <source
-        src="/assets/tube-alert/open-as-app.mp4"
-        type="video/mp4">
-</video>
+
 
 
 ## Gotcha 1 - Lambda containers
@@ -63,13 +72,14 @@ Lambda allows you to choose and amount of memory allocated to your function. Ori
 
 We can take advantage of the container behaviour. For the `latest` endpoint we know that any requests with 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
 
-## Push notificaiton
+
+## Making it a Progressive Web App
 <video class="prose__video" muted loop controls>
     <source
-        src="/assets/tube-alert/notification.webm"
+        src="/assets/tube-alert/open-as-app.webm"
         type="video/webm">
     <source
-        src="/assets/tube-alert/notification.mp4"
+        src="/assets/tube-alert/open-as-app.mp4"
         type="video/mp4">
 </video>
 
@@ -88,6 +98,16 @@ The solution is to have the service worker call a slightly different URL by addi
 https://static.tubealert.co.uk/34135971791.app.js?sw
 ```
 (todo - check this actually works)
+
+## Push notificaiton
+<video class="prose__video" muted loop controls>
+    <source
+        src="/assets/tube-alert/notification.webm"
+        type="video/webm">
+    <source
+        src="/assets/tube-alert/notification.mp4"
+        type="video/mp4">
+</video>
 
 ## Webpack setup
 Webpack can be set up in various ways. For TubeAlert there are four webpack configs required. There is also a `webpack.base.config.js` which several of them inherit from (to save repeating the same options every time). The main shared portions of config are to setup Sass, and Babel so that ES2015 class structure and imports can be used
