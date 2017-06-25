@@ -1,10 +1,13 @@
-
 // restore proper margins to semantic objects
 .text--prose {
 
     // maximum readable line-length
     @extend .g-central;
     max-width: 700px;
+
+    h1, h2, h3 {
+        clear: both;
+    }
 
     p, ul, h1, h2, h3, h4, h5, h6, table, pre {
         // when part of prose, elements get their spacing back
@@ -21,6 +24,18 @@
         max-width: 240px;
         float: right;
         margin-left: $size-grid-unit;
+        margin-bottom: $size-grid-unit;
+    }
+    img {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+
+    hr {
+        border: none;
+        border-bottom: solid 1px $color-body-keyline;
+        opacity: 0.3;
         margin-bottom: $size-grid-unit;
     }
 }
