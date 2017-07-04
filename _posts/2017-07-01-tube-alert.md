@@ -314,7 +314,7 @@ storeStatus(date, data) {
 }
 ```
 
-This creates a single row in the Statuses table with the keys required. The `getTubeDate` method in the [DateTimeHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/DateTimeHelper.js), calculates the day threshold for 3am as discussed earlier:
+This creates a single row in the Statuses table with the keys required. The `getTubeDate` method in the [DateTimeHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/DateTimeHelper.js) calculates the day threshold for 3am as discussed earlier:
 ```javascript
 static getTubeDate(momentDate) {
   const date = momentDate.clone();
@@ -367,49 +367,350 @@ getLatestDisrupted(date) {
 ```
 
 #### Subscription model
-The [Subscription model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Subscription.js) is responsible for
+The [Subscription model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Subscription.js) is responsible for adding, removing and retrieving rows from the Subscriptions table.
 
-- subscribing a user. 
-- needs to delete any no longer relevant subscriptions for that line.
-- batching
-- subscriptions for line slot uses index
+The [subscribeUser](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Subscription.js#L17-L33) method creates the neccessary input for DynamoDB:
+
+```javascript
+subscribeUser(userID, lineID, timeSlots, subscription, now) {
+  // process the time slots
+  const slots = new this.TimeSlotsHelper(timeSlots);
+
+  // create the PUT items
+  const puts = slots.getPuts(subscription, lineID, now);
+  this.logger.info(`${puts.length} puts`);
+
+  // find out any that need to be deleted
+  return this.getUserSubscriptionsForLine(userID, lineID)
+    .then((data) => {
+      const deletes = slots.getDeletes(data);
+      this.logger.info(`${deletes.length} deletes`);
+      return deletes.concat(puts);
+    })
+    .then(requests => this.batchWriter.makeRequests(requests));
+}
+```
+
+A user subscribes to one tube line at a time, with a collection of days and hours. Any hours that were previously in their subscription but missing in the update need to be removed from the Subscriptions table. In DynamoDB you can only delete a single row per operation and it must be deleted by **Primary key**. For our Subscriptions table the **Primary key** is the combination of **Partition key** (`UserID`) and **Sort key** (`LineSlot`). We cannot use a `DELETE WHERE` clause, so we need to first fetch all the rows for `UserID` in order to determine those **Primary key** values.
+ 
+
+```javascript
+getUserSubscriptions(userID) {
+  const params = {
+    TableName: TABLE_NAME_SUBSCRIPTIONS,
+    KeyConditionExpression: '#user = :user',
+    ExpressionAttributeNames: {
+      '#user': 'UserID',
+    },
+    ExpressionAttributeValues: {
+      ':user': userID,
+    },
+  };
+}
+```
+
+The [TimeSlotsHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/TimeSlotsHelper.js) is responsible for calculating the difference between the old subscriptions and new. New hours become DynamoDB `PUT` items:
+ 
+```javascript
+PutRequest: {
+  Item: {
+    UserID: userID,
+    LineSlot: lineSlot,
+    Line: lineID,
+    Day: day,
+    Hour: hour,
+    WindowStart: start,
+    Created: now.toISOString(),
+    Subscription: subscription,
+  }
+}
+``` 
+ 
+Missing hours that previously existed become `DELETE` items (we know the primary key from the previous `getUserSubscriptions` call):
+```javascript
+DeleteRequest: {
+  Key: {
+    UserID: item.UserID,
+    LineSlot: item.LineSlot,
+  }
+}
+```
+
+The result in an array of operations for DynamoDB. With one for every hour of the week this could be up to 168 operations in one request. If we were to loop through each of them individually our requests would likely time out. Luckily DynamoDB supports a `BatchWrite` operation, allowing up to 25 at one time. The [BatchWriteHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/BatchWriteHelper.js) has been written to do this. It takes an array of operations and breaks it into chunks of 25 to perform a `BatchWrite`. If, for any reason, one of the operations failed it is put back into the list to try again. It does all this using a recursive loop.
+
+```javascript
+makeRequests(requests, inputTotal) {
+  const total = inputTotal || requests.length;
+
+  if (requests.length === 0) {
+    // nothing to do. get out and return the original count
+    return total;
+  }
+
+  // can only process 25 at a time
+  const toProcess = requests.slice(0, MAX_BATCH_SIZE);
+  let remaining = requests.slice(MAX_BATCH_SIZE);
+  this.logger.info(`Processing ${toProcess.length} items`);
+
+  // perform the batch request
+  const params = {
+    RequestItems: {},
+  };
+  params.RequestItems[this.tableName] = toProcess;
+
+  return this.documentClient.batchWrite(params).promise()
+    .then((data) => {
+      // put any UnprocessedItems back onto remaining list
+      if ('UnprocessedItems' in data && this.tableName in data.UnprocessedItems) {
+        remaining = remaining.concat(data.UnprocessedItems[this.tableName]);
+      }
+      return remaining;
+    })
+    .then(remainingResult => this.makeRequests(remainingResult, total));
+}
+```
+
+The [`unsubcribeUser`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Subscription.js#L35) method deletes all rows associated with a given `UserID`. As before, in order to do this it has to first fetch all the rows, so it uses the same `getUserSubscriptions` method.
+
+When a Line becomes disrupted the application needs to be able to find all the subscribers that should be alerted. The [`getSubscriptionsForLineSlot`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Subscription.js#L80) method needs to query for this. We know the `LineSlot` as we calculate it from the disrupted line and current datetime, so we know the **Sort Key**. However, the `UserID`, which is the **Partition Key**, is the data we are looking for so we don't have it. DynamoDB queries *must* have a **Partition Key**, so this is where the lineSlot **index** is used instead. In this index the `LineSlot` and `UserID` are swapped round, so we can query by `LineSlot` and get back rows containing the `UserID` values we want.
+
+```javascript
+const params = {
+  TableName: TABLE_NAME_SUBSCRIPTIONS,
+  IndexName: 'index_lineSlot',
+  KeyConditionExpression: '#line = :line',
+  ExpressionAttributeNames: {
+    '#line': 'LineSlot',
+  },
+  ExpressionAttributeValues: {
+    ':line': lineSlot,
+  },
+};
+```
+
 
 
 #### Notification model
-The [Notification model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Notification.js) is responsible for
+The [Notification model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Notification.js) is responsible for handling notifications in DynamoDB as well as sending the notifications out to the user.
 
----
-With all the data actions now available via the models, the controllers can be invoked to make use of them.
+Having decided which Subscriptions are to be notified the application will call [`createNotification`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Notification.js#L47) for each. This method will construct a row in the Notifications table via `PUT` 
+
+```javascript
+PutRequest: {
+  Item: {
+    NotificationID: notificationID,
+    Subscription: subscription,
+    Payload: JSON.stringify({
+      title: lineData.name,
+      body: lineData.statusSummary,
+      icon: this.config.STATIC_HOST + this.assetManifest[`icon-${lineData.urlKey}.png`],
+      tag: `/`,
+    }),
+    Created: this.dateTimeHelper.getNow().toISOString(),
+  },
+}
+```
+
+This DynamoDB table will be hooked up to a Lambda function that will invoke for every new row. Therefore, rows aren't expected to last and the table isn't intended to be queried. The **Partition Key** is the `NotificationID`, which is just a random string:
+```javascript
+static createID() {
+  // generate a randomish UUID
+  return (`${Math.random().toString(36)}00000000000000000`).slice(2, 18);
+}
+```
+
+The `Payload` is the key data that will be needed for the [push notification](https://developers.google.com/web/ilt/pwa/introduction-to-push-notifications). It is calculated here and fired into the table, so it can be processed quickly later.
+ 
+The [`handleNotification`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Notification.js#L77) method will have received a row from the DynamoDB table and is responsible for sending the notification and then deleting that row.
+
+Push notifications with a payload need to be encrypted. Thankfully the [web push library](https://github.com/web-push-libs/web-push) that we are using handles this for us, so the sending is very easy:
+
+```javascript
+return this.webPush.sendNotification(subscription, payload)
+  .then(() => {
+    this.logger.info('Notification sent. Deleting record');
+    return this.batchWriter.makeRequests([deleteRequest]);
+  });
+```
+
+If for any reason there is a failure, AWS will try again to call the Lambda function so it takes a lot of failures for the Notifications table to not be empty nearly all the time.
 
 ### Controllers
+With all the data actions now available via the models, the controllers can be invoked to make use of them. They are much thinner as the models are doing the hard work, though they make heavy use of Promises as these operations must usually complete before the next begins.
+
+As each controller is invoked by a Lambda function they are passed a `callback` parameter in their constructor. This came from the `handler.js`:
+
+```javascript
+(evt, ctx, cb) => Controllers.data(cb).fetchAction()
+```
+
+Lambda supplies that callback function. When your application is complete you call this function to signify to AWS you are done. The callback accepts two parameters. If the first parameter is `null` then you signify that everything was successful:
+```javascript
+this.callback(null, 'All done');
+```
+
+The second parameter is what the Lambda function will return to whatever is listening. It could be a string or an object. If there were any issues then set the first parameter:
+
+```javascript
+this.callback('Failed to complete');
+```
+
+The contents of the parameter will be logged and the invocation will count as a failure. In many scenarios AWS (such as timed invocations) will attempt to invoke the function again a certain number of times. The callback function is passed into the constructor so it can be called from anywhere in the class to cease the operation.
 
 #### Data controller
-The [Data controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/DataController.js) handles the routine jobs for fetching and storing. First up the `fetchAction` 
+The [Data controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/DataController.js) handles the routine jobs for fetching and storing. 
+
+The `fetchAction` is triggered on a schedule every 2 minutes. It simply calls the StatusModel to get the latest status, and uses the NotificationModel to create a new notification row if anybody needs to be alerted to a change.
+
+The `hourlyAction` is triggered on a schedule at 1 minute passed every hour. It looks for disrupted lines using the StatusModel, and looks for any subscribers to said lines using the SubscriptionsModel. If anyone need to be alerted, it'll again use the NotificationModel.
+
+The `notifyAction` is triggered via a change in the Notifications DynamoDB table. When that happens AWS will send an event in the invocation of the Lambda function. This is passed from the `handler.js`:
+
+```javascript
+(evt, ctx, cb) => Controllers.data(cb).notifyAction(evt)
+```
+
+The event contains the record that changed in the table. This would include `DELETE` events, but we only care about new rows being entered. Therefore, if anything other than an `INSERT` is found the action quickly exits successfully to ignore it
+```javascript
+if (record.eventName !== 'INSERT' || !record.dynamodb.NewImage) {
+  return this.callback(null, 'Event was not an INSERT');
+}
+```
+
+Raw data from DynamoDB is not easy to parse as it is closer to being serialised. Therefore, in order to use the new record it is converted using the AWS library provided `AWS.DynamoDB.Converter.output`:
+
+```javascript
+const rowData = this.dynamoConverter({
+  M: record.dynamodb.NewImage,
+});
+return this.notificationModel.handleNotification(rowData)
+```
+
+This notification is then handled by the NotificationModel.
 
 #### Status controller
-The [Status controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/StatusController.js) handles an incoming `GET` request for `/latest` and returns a successful JSON response of all the lines statuses, to be used by the client side JavaScript application.
-- Talk about the ResponseHelper and the Lambda callback. 
+The [Status controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/StatusController.js) handles an incoming `GET` request for `/latest` and returns a successful JSON response of all the lines statuses (from StatusModel), to be used by the client side JavaScript application.
+
+The request will have come via the API Gateway, and the response will need to be readable by that. The callback is called with a standard format:
+```javascript
+return this.callback(null, this.jsonResponseHelper.createResponse(data, 120));
+```
+
+This format is generated by the [JsonResponseHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/JsonResponseHelper.js) which sets proper headers to render the page as JSON, as well as `cache-control`. These come back in an object format that API Gateway will use:
+```javascript
+return {
+  statusCode: 200,
+  headers,
+  body: JSON.stringify(data),
+};
+```
 
 #### Subscriptions controller
 The [Subscriptions controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/SubscriptionsController.js) handles the incoming `POST` requests for `subscribe` and `unsubscribe`. It simply calls the corresponding method in the SubscriptionModel and returns a successful JSON response in the same way as the Status Controller.
 
-#### Webapp controller
-The [Webapp controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js) handles an incoming `GET` request via a URL and returns a webpage. This is discussed in more detail in the "Server side rendering" section.
+However, these `POST` requests will have come with data. AWS will pass the request via the `event` object, which can be parsed for the body.
 
----
 ```javascript
-const assetManifest = require('../build/assets-manifest.json');
+subscribeAction(event) {
+  const body = JSON.parse(event.body);
+  const userID = body.userID;
+  const lineID = body.lineID;
+  const timeSlots = body.timeSlots;
+  const subscription = body.subscription;
 ```
+
+#### Webapp controller
+The [Webapp controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js) handles an incoming `GET` request via a URL and returns a webpage.
+
+The `invokeAction` takes an `event` which will contain the path requested. Browsers will frequently make requests for `favicon.ico` at the root of your domain so instead of booting the entire application to not find it, this action immediately exists successfully with a 404.
+```javascript
+const path = event.path;
+if (path === '/favicon.ico') {
+  return this.callback(
+    null,
+    {
+      statusCode: 404,
+      headers: {
+        'cache-control': `public, max-age=${60 * 60 * 24 * 60}`
+      },
+      body: 'Not found'
+    }
+  );
+}
+```
+
+The method then fetches the latest status `data` and passes it into `app.js`, which will generate a body to be returned as `text/html`
+
+```javascript
+const App = require('../../build/app.js'); // Load the compiled App entry point
+return App.default(data, path, this.assetsHelper, body => this.callback(
+  null,
+  {
+    statusCode: 200,
+    headers: {
+      'content-type': 'text/html; charset=utf-8'
+    },
+    body,
+  }
+));
+```
+
+The actual contents of `app.js` is discussed in more detail in the "Server side rendering" section.
 
 ### Serverless framework
 
+The [Serverless](https://serverless.com/) framework is a very useful application to manage your Lambda based application. 
+
+Once installed it is configured for your application via the [`serverless.yml`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/serverless.yml) file, which has several parts.
+
 #### Run an individual function
-ENV variables
+Each function is declared in the `functions` section and declares the handler method and trigger. The simplest form is the schedule based function:
+```yaml
+functions:
+  fetch:
+    handler: handler.fetch
+    events:
+      - schedule: rate(2 minutes)
+```
+
+While building, functions can be invoked locally using a command:
+```bash
+serverless invoke local --function fetch
+```
+
+There are some secrets that the application requires. These are handled via environment variables, which are declared as being used in the config:
+
+```yaml
+environment:
+  TFL_APP_ID: ${env:TFL_APP_ID}
+  TFL_APP_KEY: ${env:TFL_APP_KEY}
+  GCM_API_KEY: ${env:GCM_API_KEY}
+  CONTACT_EMAIL: ${env:CONTACT_EMAIL}
+  STATIC_HOST: ${env:STATIC_HOST}
+  PRIVATE_KEY: ${env:PRIVATE_KEY}
+  PUBLIC_KEY: ${env:PUBLIC_KEY}
+```
+
+These environment variables must be set before invoking the function or it will not work.
+
+In order to talk to AWS components, such as DynamoDB you need to have set up your [AWS Credentials file](http://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html) by creating an ID and Secret Key in [IAM](https://aws.amazon.com/iam/).
+
+For functions that require input (such as the subscribe/unsubscribe `POST` events), an input event can be provided with the `--data` flag, as described in the [documentation](https://serverless.com/framework/docs/providers/aws/cli-reference/invoke-local/#aws---invoke-local).
 
 #### Deploying
 
 deploying directly with serverless - 
 - exclude (keeps the file size down)
+
+```yaml
+package:
+  exclude:
+    - site/**
+    - tests/**
+    - coverage
+    - build/static/**
+```
+
 - stored in s3 (deployment bucket)
 
 
@@ -419,30 +720,53 @@ deploying directly with serverless -
 
 ### Monitoring
 
+#### Logging
+
 console.log
 cloudwatch monitoring
 
+#### Dashboard
+[![Screenshot of the Cloudwatch monitoring graph for Lamda duration](/assets/tube-alert/graph.png)](/assets/tube-alert/graph.png)
 
 
 ### Note about Lambda containers
 Lambda functions run in containers. To improve start-up performance AWS may keep the container around once your function completes. Then if you run the function again your application is already bootstrapped. You can't guarantee it bit those containers may stick around for up to 24 hours.
 
+In Nodejs this means if you set a variable in the scope of the file, it will still be set on the next invocation. Therefore the TubeAlert DI (Dependency Injection) container was written to instantiate new objects each time the function is run, rather than creating them once at the top of the file. As an illustration:
 
-In Nodejs this means if you set a variable in the scope of the file, it will still be set on the next invocation. Therefore the TubeAlert DI (Dependency Injection) container was written to instantiate new objects each time the function is run, rather than creating them once at the top of the file
+```javascript
+const dateTimeHelper = new DateTimeHelper();
+const statusModel = new StatusModel();
 
-(code) vs (code)
+function doThing()
+{
+  const time = dateTimeHelper.getTime();
+  statusModel.get(time);
+}
+```
+vs
+
+```javascript
+function doThing()
+{
+  const dateTimeHelper = new DateTimeHelper();
+  const statusModel = new StatusModel();
+  const time = dateTimeHelper.getTime();
+  statusModel.get(time);
+}
+```
 
 This is particularly important with DateTime, otherwise the application date will be frozen for every invocation until the container is terminated.
 
-Another side effect is that memory leaks are a more pressing concern. It appeared to be the case that the longer the container live the slower the function became, until it reached the timeout and errors prevailed. Then, overnight, the container terminated and the cycle reset. 
+Another side effect is that memory leaks are a more pressing concern. During development it appeared to be the case that the longer the container lived the slower the function became, until it reached the timeout and errors prevailed. Then, occasionally, the container terminated and the cycle reset. 
 
-(graph)
+[![Screenshot of Cloudwatch monitoring graphs misbehaving](/assets/tube-alert/cloudwatch-errors.png)](/assets/tube-alert/cloudwatch-errors.png)
 
-There was an investigation into the code to ensure no data is unnecessarily hanging around. However, libraries or processes outside of your function (such as growing log files) are out of your control.
+There was an investigation into the code to ensure no data was hanging around unnecessarily. However, libraries or processes outside of the function (such as growing log files perhaps) are out of your control.
 
-Lambda allows you to choose and amount of memory allocated to your function. Original this was set to 128MB for all functions. Although the logs were showing the `fetch` function usage as being well below that the slowdowns and timeouts were still occurring. It seems that the underlying CPU, network and disk performance are correlated (though not declared) to your choice of memory allocation. By upping the allocation to 256MB the `fetch` function now sits at a stable ~1000ms. The timeout was also increased to 10 seconds but it now never reaches that. The lambda erros graph is now flat.
+Lambda allows you to choose and amount of memory allocated to your function. Originally this was set to 128MB for all functions. Although the logs were showing the `fetch` function usage as being well below that the slowdowns and timeouts were still occurring. It seems that the underlying CPU, network and disk performance are correlated (though not declared) to your choice of memory allocation. By upping the allocation to 256MB the `fetch` function now sits mostly under ~1000ms. The timeout was also increased to 10 seconds but it now never reaches that. The lambda errors graph is now mostly flat.
 
-(graph)
+[![Screenshot of all Cloudwatch monitoring graphs](/assets/tube-alert/cloudwatch.png)](/assets/tube-alert/cloudwatch.png)
 
 We can take advantage of the container behaviour. For the `latest` endpoint we know that any requests with 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
 
@@ -471,22 +795,16 @@ if (statusCache.expires > now) {
 ```
 The action does not *rely* on the data being in this cache, but can achieve a small bonus while the container is still alive. 
 
+### Tests
+
+
 ## Building the front end (React)
 
-### Webpack setup
-Webpack can be set up in various ways. For TubeAlert there are four webpack configs required. There is also a `webpack.base.config.js` which several of them inherit from (to save repeating the same options every time). The main shared portions of config are to setup Sass, and Babel so that ES2015 class structure and imports can be used
-
-#### `webpack.dev.config.js`
-This is used during development and is activated via `yarn dev` or to provide a server `yarn server`. The server makes use of the webpack dev server to offer hot reloading during development. This is needed for convenient development of the React application
-
-#### `webpack.prod.config.js`
-This is activated via `yarn prod`. It is run during the Travis build and generates the application JavaScript and CSS. This uses production mode for react and minifies the output to reduce filesize. It creates files named by hash ready for upload to the S3 static location.
-
-#### `webpack.build.config.js`
-The lambda function for the webapp is running in node, which cannot understand ES2015 imports or JSX syntax natively. Therefore this webpack file builds the app.js for the lambda function. It has a different entry point to the client side version of the application as it needs to return a html response rather than activate a DOM element. This also runs ESLint and will fail the Travis build if there are any issues.
-
-#### `webpack.sw.config.js`
-This simply builds the service worker. The service worker needs to know the hashed address of the static assets in order to cache them, so this webpack method will embed the manifest file (generated from `webpack.prod.config.js`) into the service worker itself. As the hash for the assets will be different when there are changes this also means the service worker will update due to the embedded manifest value now having different values.
+Babel for JSX and ES6
+Entry point `client.js`
+CSS / Images
+Manifest file
+Build folder
 
 ## Deployment pipeline
 Travis
@@ -539,7 +857,20 @@ The Travis build can specify the cache-control headers the files will have when 
 Some files have a fixed name and therefore can't be cached for that long. Therefore there needs to be a separate Travis deploy section to upload these files from a separate `static-low-cache` folder and only specify a 10 minute cache.
 
 
+### Webpack setup
+Webpack can be set up in various ways. Based on all the needs for the TubeAlert infrastructure there are four webpack configs required. There is also a `webpack.base.config.js` which several of them inherit from (to save repeating the same options every time). The main shared portions of config are to setup Sass, and Babel so that ES2015 class structure and imports can be used
 
+#### `webpack.dev.config.js`
+This is used during development and is activated via `yarn dev` or to provide a server `yarn server`. The server makes use of the webpack dev server to offer hot reloading during development. This is needed for convenient development of the React application
+
+#### `webpack.prod.config.js`
+This is activated via `yarn prod`. It is run during the Travis build and generates the application JavaScript and CSS. This uses production mode for react and minifies the output to reduce filesize. It creates files named by hash ready for upload to the S3 static location.
+
+#### `webpack.build.config.js`
+The lambda function for the webapp is running in node, which cannot understand ES2015 imports or JSX syntax natively. Therefore this webpack file builds the app.js for the lambda function. It has a different entry point to the client side version of the application as it needs to return a html response rather than activate a DOM element. This also runs ESLint and will fail the Travis build if there are any issues.
+
+#### `webpack.sw.config.js`
+This simply builds the service worker. The service worker needs to know the hashed address of the static assets in order to cache them, so this webpack method will embed the manifest file (generated from `webpack.prod.config.js`) into the service worker itself. As the hash for the assets will be different when there are changes this also means the service worker will update due to the embedded manifest value now having different values.
 
 
 
@@ -548,11 +879,98 @@ Some files have a fixed name and therefore can't be cached for that long. Theref
 
 ### Server side rendering
 
-Must use babelled on the server
+[`build.jsx`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/build.jsx) entry point
 
-Redux to hold state (statuses)
+
+Page wrapper.
+
+
+In the Lambda function the Node cannot understand JSX syntax, so the code is compiled through Babel and put into `build/app.js` which is imported into [WebappController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js)
+```javascript
+const App = require('../../build/app.js'); // Load the compiled App entry point
+```
+
+The status data is entered, and passed straight into redux. Redux allows the application to not have to care where the data source is.
 
 ### Service worker
+
+- Cloudflare, caching and HTTPS
+
+#### Service worker API Gateway proxy
+Before the service worker can do anything it has to be on the same domain as the application it is controlling. Therefore it can't be served from static like the other static files. It also cannot change its name as the URL location is rechecked fro updates by the browser.
+
+Therefore, even though the file is available on S3 (https://static.tubealert.co.uk/sw.js) it is not served from there. A new API gateway route is setup to be a proxy to that file on S3. The CloudFormation sets up the appropriate IAM permissions to give API Gateway permissions to access the `StaticBucket` on S3:
+
+```yaml
+APIRole:
+  Type: AWS::IAM::Role
+  Properties:
+    Policies:
+      - PolicyName: 'ServiceWorkerAPI'
+        PolicyDocument:
+          Statement:
+            - Effect: 'Allow'
+              Action:
+                - 's3:GetObject'
+              Resource:
+                - Fn::Join:
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - Ref: StaticBucket
+                    - '/sw.js'
+    AssumeRolePolicyDocument:
+      Statement:
+      - Effect: Allow
+        Principal:
+          Service:
+            - apigateway.amazonaws.com
+        Action:
+          - sts:AssumeRole
+```
+It then sets up the Resource and Method to target `/sw.js` and serve the `sw.js` file from S3:
+
+```yaml
+ServiceWorkerAPI:
+  Type: AWS::ApiGateway::Resource
+  Properties:
+    ParentId:
+      Fn::GetAtt: [ ApiGatewayRestApi, 'RootResourceId' ]
+    PathPart: 'sw.js'
+    RestApiId:
+      Ref: ApiGatewayRestApi
+ServiceWorkerMethod:
+  Type: 'AWS::ApiGateway::Method'
+  Properties:
+    AuthorizationType: 'NONE'
+    HttpMethod: 'GET'
+    MethodResponses:
+      - StatusCode: 200
+        ResponseParameters:
+          method.response.header.Content-Type: true
+    Integration:
+      IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Content-Type: integration.response.header.Content-Type
+      Type: 'AWS'
+      IntegrationHttpMethod: 'GET'
+      Credentials:
+        Fn::GetAtt: [ APIRole, 'Arn' ]
+      Uri:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:apigateway:'
+            - Ref: AWS::Region
+            - ':s3:path/'
+            - Ref: StaticBucket
+            - '/sw.js'
+    ResourceId:
+      Ref: ServiceWorkerAPI
+    RestApiId:
+      Ref: ApiGatewayRestApi
+```
+
+#### Offline and startup
 <video class="prose__video" muted loop controls>
     <source
         src="/assets/tube-alert/open-as-app.webm"
@@ -562,31 +980,63 @@ Redux to hold state (statuses)
         type="video/mp4">
 </video>
 
-
-#### Service worker API Gateway proxy
-The service worker has to be on the same domain as the application it is controlling. Therefore it can't be served from static like the other static files. It also cannot change its name as the URL location is rechecked fro updates by the browser.
-
-Therefore, even though the file is available on S3 (https://static.tubealert.co.uk/sw.js) it is not served from there. A new API gateway route is setup to be a proxy to that file on S3. The CloudFormation sets up the appropriate IAM permissions:
-(code)
-And then it sets up the Resource and Method
-(code)
+Needs the asset manifest, so it is webpacked
 
 
 ### Note about Service Worker Cache and S3
 
 The static assets (CSS and JS) are stored on S3, and cached for a year with HTML headers. We also want to cache them in the service worker so that the application can work offline.
 
-However, since the static asseets are on a different domain this would encounter CORS issues. No problem, AWS allows you to set CORS headers on your bucket. *BUT* the S3 response will only include those CORS headers if the request contains and `Origin` header.
+However, since the static assets are on a different domain this would encounter CORS issues. No problem, AWS allows you to set CORS headers on your bucket. *BUT* the S3 response will only include those CORS headers if the request contains an `Origin` header.
 
 Client side JavaScript calls will include this header, such as the one made in the service worker `cacheAll` call. Linked CSS and JavaScript files included via HTML tags (`<link>`/`<script>`) will not include this header, which is usually fine as they don't need it.
 
-What is happening though is the page is being loaded and the assets are being fetched. Those assets respond *without* CORS headers, but with the expected year long `cache-control`. The browser will then put those files into its disk cache (for a year). Next the service worker loads and activates, performing the `cacheAll` command. It attempts to go and fetch the files to be cached, send the `Origin` header. However, since the files are in the disk cache this call doesn't go to the server. The browser pulls the files from its own cache, sees that there are no CORS headers and rejects the request as insecure. Browsers do not vary their cache based on the presence of the `Origin` header.
+What is happening though is the page is being loaded and the assets are being fetched. Those assets respond *without* CORS headers, but with the expected year long `cache-control`. The browser will then put those files into its disk cache (for a year). Next the service worker loads and activates, performing the `cacheAll` command. It attempts to go and fetch the files to be cached, sending the `Origin` header. However, since the files are in the disk cache this call doesn't go to the server. The browser pulls the files from its own cache, sees that there are no CORS headers and rejects the request as insecure. Browsers do not vary their cache based on the presence of the `Origin` header.
 
 The solution is to have the service worker call a slightly different URL by adding a query string.
 ```
 https://static.tubealert.co.uk/34135971791.app.js?sw
 ```
-(todo - check this actually works)
+
+This will bypass the browser cache as the URL differs. The backend isn't looking for that query string so the response will be no different.
+
+```javascript
+cache.addAll([
+  '/',
+  `${STATIC_HOST}${assetManifest['app.css']}?sw`,
+  `${STATIC_HOST}${assetManifest['app.js']}?sw`,
+])
+```
+
+These files are now in the cache under this name, so we need to intercept requests for these files without the `?sw` and add it. We can do this in the `fetch` handler, but since the `Request` object is immutable we need to duplicate it and make a new one with only the URL changed.
+
+```javascript
+self.addEventListener('fetch', (event) => {
+  let request = event.request;
+  if (request.url &&
+    request.url.startsWith(STATIC_HOST)
+  ) {
+    request = new Request(`${request.url}?sw`, {
+      method: request.method,
+      headers: request.headers,
+      mode: request.mode,
+      credentials: request.credentials,
+      redirect: request.redirect,
+      referrer: request.referrer,
+      referrerPolicy: request.referrerPolicy
+    });
+  }
+
+  return event.respondWith(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.match(request)
+        .then(response => response || fetch(request).then(response))
+      )
+  );
+});
+```
+
+
 
 ## Push notifications
 
@@ -605,13 +1055,3 @@ https://static.tubealert.co.uk/34135971791.app.js?sw
 
 
 
-## todo
-- Briefly mention the goals and the previous site.
-- Discuss lambda and being function based. Therefore show the workflows.
-- Discuss SQL vs NoSQL. Prefer SQL but can get away with NoSQL here because it is free - How to use the Indexes
-- API Gateway and S3
-- Cloudflare, caching and HTTPS
-- Full infrastructure diagram
-- React site, using latest.json
-- Offline & Push with service worker
-- Progressive enhancement
