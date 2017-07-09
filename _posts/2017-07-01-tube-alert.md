@@ -7,7 +7,7 @@ author:
 image: /assets/tube-alert/banner.svg
 ---
 
-[TubeAlert](https://tubealert.co.uk) is a web site intended to be a quick indicator of the status of the [London Underground](https://tfl.gov.uk/). It has a no-nonsense interface to give the answer immediately. It also allows the user to subscribe to a tube line and time slot to be alerted to any disruptions. It is all built on the open web from a simple webpage with progressive enhancement up to full progressive web app that can be added to the home screen. The goal was to build the full feature-set as cheaply as possible. This article documents the techniques and tactics used as well as the technologies in play such as NodeJS, React, Webpack, Serverless, Travis, AWS Lambda/S3/DynamoDb/Cloudformation/Cloudwatch.
+[TubeAlert](https://tubealert.co.uk) is a web site intended to be a quick indicator of the status of the [London Underground](https://tfl.gov.uk/). It has a no-nonsense interface to give the answer immediately. It also allows the user to subscribe to a tube line and time slot to be alerted to any disruptions. It is all built on the open web from a simple webpage with progressive enhancement up to full progressive web app that can be added to the home screen. The goal was to build the full feature-set as cheaply as possible. This article documents the techniques and tactics used as well as the technologies in play such as NodeJS, React, Webpack, Serverless, Travis, AWS Lambda / S3 / DynamoDb / Cloudformation / Cloudwatch.
 
 [![Screenshot of the TubeAlert website](/assets/tube-alert/screenshot.png)](https://tubealert.co.uk)
 
@@ -39,6 +39,8 @@ Normally this would dictate the need for a server, but [AWS](https://aws.amazon.
 * [DynamoDB](https://aws.amazon.com/dynamodb/) - A NoSQL datastore
 * [S3](https://aws.amazon.com/s3/) - File storage for static assets
 * [Lambda](https://aws.amazon.com/lambda/) - Runs your code
+
+**todo - add icons here for each**
 
 Each of these operates on a pay-as-you-go basis, and only charge for your actual usage. There are no servers sitting around under-utilised. AWS offer a generous [Free tier](https://aws.amazon.com/free/), especially for DynamoDB and Lambda, so it is possible that the entirety of TubeAlert can function without costing anything.
 
@@ -94,6 +96,8 @@ In DynamoDB each table needs a **Partition key**. Optionally each table can have
 You can only `Query` for a list of items where they share the same **Partition key**. `Query` is much faster than `List` where you effectively read the whole table and filter in code. Therefore, in order to use `Query` on different data in relation to the **Partition key** you need to carefully design your structure and use indexes.
 
 ### DynamoDB structure
+
+(todo provisioning. add the chosen provision values to each table description)
 With these considerations we arrive at the following DynamoDB structure:
 
 #### Statuses table
@@ -180,7 +184,7 @@ AWS Lambda is responsible for running the application code, and consists of 7 fu
 
 Four of the Lambda functions are triggered via a HTTP request from a user. In order to do that we need to setup [AWS API Gateway](https://aws.amazon.com/api-gateway/). The [https://tubealert.co.uk](https://tubealert.co.uk) DNS will need to be setup to point at the API Gateway, so that it can invoke the Lambda functions.
 
-Two S3 buckets are setup. One is internal. This one is used to host the code of our Lambda functions and the [Cloudformation](https://aws.amazon.com/cloudformation/) setup of the application as a whole. The other bucket is for the website static assets, such as CSS and JavaScript, accessed by the browser.
+Two S3 buckets are setup. One is internal, which is used to host the code of our Lambda functions. The other bucket is public for the website static assets, such as CSS and JavaScript, and is accessed by the browser.
 
 ## Building the Lambda functions (Node & Serverless)
 Note, all code for the application can be found on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
@@ -588,6 +592,21 @@ return this.notificationModel.handleNotification(rowData)
 
 This notification is then handled by the NotificationModel.
 
+It is possible for a user to remove their subscription from your website directly in their browser, either by blocking notifications on your website or clearing their website data. When this happens you will not be informed so the user lingers in your data store. When you attempt to send that user a notification the endpoint will respond with a `404 Not found` or `410 Gone` status. These need to be [caught](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/DataController.js#L84-L96) and used to remove the subscriptions from our data store.
+
+```javascript
+.catch((result) => {
+  const statusCode = result.statusCode;
+  this.logger.info(statusCode + ' response code');
+  if (statusCode !== 404 && statusCode !== 410) {
+    return this.error();
+  }
+  return this.removeOldSubscription(rowData)
+    .then(this.done.bind(this))
+    .catch(this.error.bind(this));
+});
+```
+
 #### Status controller
 The [Status controller](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/StatusController.js) handles an incoming `GET` request for `/latest` and returns a successful JSON response of all the lines statuses (from StatusModel), to be used by the client side JavaScript application.
 
@@ -673,6 +692,18 @@ functions:
       - schedule: rate(2 minutes)
 ```
 
+Functions that are powered by API Gateway are also easily setup here:
+```yaml
+subscribe:
+  handler: handler.subscribe
+  events:
+    - http:
+        path: /subscribe
+        method: post
+```
+Serverless will automatically setup the API Gateway endpoints and hook them to your Lambda function.
+
+
 While building, functions can be invoked locally using a command:
 ```bash
 serverless invoke local --function fetch
@@ -699,38 +730,142 @@ For functions that require input (such as the subscribe/unsubscribe `POST` event
 
 #### Deploying
 
-deploying directly with serverless - 
-- exclude (keeps the file size down)
+The serverless framework can be used to [deploy your Lambda functions](https://serverless.com/framework/docs/providers/aws/cli-reference/deploy/) to AWS, rather than uploading them manually via the console. This involves zipping all of your application code and uploading it to S3 in the `deploymentBucket` you specifiy in your yaml. This is then used to setup the Lambda functions so need to contain all code your functions require. This means it must include your `node_modules`, so the deployment has to happen after `npm/yarn install`.
+
+If you have a lot of application code you can find this deployment taking a very long time. To help with this you can exclude certain files from the zip. The lambda functions do not require the test suite for example, do that can be removed. Exclusions are specified in the Yaml.
 
 ```yaml
 package:
   exclude:
-    - site/**
-    - tests/**
-    - coverage
-    - build/static/**
+    - tests/**; # Lambda functions do not use the tests
+    - coverage # Coverage reports only needed as a development tool
+    - build/static/** # Lambda functions don't need built static assets
 ```
 
-- stored in s3 (deployment bucket)
+Once this deployment is complete the Lambda functions are all visible in the AWS Lambda console:
 
+![Lambda console showing the 7 lambda functions](/assets/tube-alert/lambda-functions.png)
+
+With the way we have structured the application, all the functions actually consist of the same code. They just have a different entry point each. This is why they all say `5.5MB` for the code size.
+
+As part of this deployment Serverless would have also set up the triggers for the functions. This was simple for the time based functions (fetch & hourly), but the others need more setup.
 
 #### Cloudformation
+TubeAlert has several parts of infrastructure to support Lambda: DymanoDB, S3, Cloudwatch and API Gateway. It is possible to set up all these parts manually in the AWS web console. However, it is much more stable and predictable if we can define that infrastructure in code. This can be done via [AWS Cloudformation](https://aws.amazon.com/cloudformation/), which lets you declare your infrastructure using JSON or Yaml.
+
+The Serverless framework Yaml file allows you to have a `resources` section, which consists of a Cloudformation template. The [TubeAlert resources](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/serverless.yml#L122-L291) section sets up a few things.
+
+Cloudwatch can be configured by this section. Every Lambda function generates logs in Cloudwatch. By default these are retained forever, which would eventually use enough space to exhaust the free tier. This application doesn't really need to keep logs for that long so the retention time is set to 30 days for each function:
+
+```yaml
+LatestLogGroup:
+  Type: AWS::Logs::LogGroup
+  Properties:
+    RetentionInDays: "30"
+SubscribeLogGroup:
+  Type: AWS::Logs::LogGroup
+  Properties:
+    RetentionInDays: "30"
+...
+```
+
+The DynamoDB tables are also set up this way. This sets up the names of the tables, **Partition** and **Sort Key**, and any indexes. It also needs to setup the provisioning. For example, for the Notifications table:
+
+```yaml
+TubeAlertNotificationsTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: tubealert.co.uk_notifications
+    AttributeDefinitions:
+      - AttributeName: NotificationID
+        AttributeType: S
+    KeySchema:
+      - AttributeName: NotificationID
+        KeyType: HASH
+    ProvisionedThroughput:
+      ReadCapacityUnits: 1
+      WriteCapacityUnits: 1
+    StreamSpecification:
+      StreamViewType: NEW_IMAGE
+```
+
+Note, this table also sets up the `StreamSpecification` to have a notification stream when changes happen on rows. `NEW_IMAGE` means the full contents of the row will be part of the stream items. This stream can now be used as a trigger in the `Notify` Lambda function setup.
+
+```yaml
+notify:
+  handler: handler.notify
+  events:
+    - stream:
+      type: dynamodb
+      arn:
+        Fn::GetAtt: [ TubeAlertNotificationsTable, "StreamArn" ]
+      batchSize: 1
+      startingPosition: LATEST
+```
+
+`Fn::GetAtt` allows one part of Cloudformation to reference another part, so it links up programatically. If you didn't use this you would need to know the Amazon Resource Name (ARN) of the stream, meaning you would have to manually create your resources in a very specific order to retrieve them one after the other. 
+
 #### IAM
 
+AWS handles all security and permissions via [IAM](https://aws.amazon.com/iam/). In order to ensure our Lambda functions have read & write permissions to the DynamoDB tables we need to set that up. Serverless will automatically create an IAM Role for the Lambda functions. We must now attach permissions to that role. The structure is the same as the Cloudformation, but is added to the `iamRoleStatements` property in order to be linked to the Lambda Role that Serverless will generate. Each of the tables and the `Notify` stream are [added to the yaml](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/serverless.yml#L23-L61):
+
+```yaml
+iamRoleStatements:
+  - Effect: 'Allow'
+    Action:
+      - 'dynamodb:*'
+    Resource:
+      # ...
+      - Fn::Join:
+          - ''
+          - - 'arn:aws:dynamodb:'
+            - Ref: 'AWS::Region'
+            - ':'
+            - Ref: 'AWS::AccountId'
+            - ':table/'
+            - Ref: TubeAlertNotificationsTable
+      - Fn::GetAtt: [ TubeAlertNotificationsTable, "StreamArn" ]
+```
+
+At present this grants the functions all DynamoDB rights for these tables, but that can be refactored to simple Read/Write permissions.
 
 ### Monitoring
 
+Monitoring for the application is handled via [Cloudwatch](https://aws.amazon.com/cloudwatch/), which has a generous free tier for logs and monitoring graphs.
+
 #### Logging
+As mentioned earlier, Lambda functions will log to Cloudwatch automatically. At its simplest this will log Lambda `START`, `END` and `REPORT` events
 
-console.log
-cloudwatch monitoring
+![Screenshot of simplest Lambda log types](/assets/tube-alert/logs.png)
 
-#### Dashboard
+The `REPORT` event gives you information about how time and memory the function took. This is important to check as you are billed for the amount of use.
+
+In a NodeJS Lambda function, calls to `console.info` will be added to the Cloudwatch logs, so this is very useful to see the progress of the application. Error states passed to the callback function will also appear.
+
+#### Graphing
+
+Logging is useful for seeing the detail of the application as it runs, and for helping solve issues. However, to get an indication if your application is running well Cloudwatch graphs are the most useful.
+
+AWS offer several metrics for Lambda functions. These include:
+
+- Invocation count
+- Duration
+- Error count
+
+These can be graphed with multiple functions on the same graph. For example, the graph of Lambda duration shows that the slowest function is the `fetch` function (which is to be expected as it does most work and makes and external API call):
+
 [![Screenshot of the Cloudwatch monitoring graph for Lamda duration](/assets/tube-alert/graph.png)](/assets/tube-alert/graph.png)
 
+The API gateway also has some metrics, such as a call count.
+
+Multiple graphs can be put together into a Dashboard:
+
+[![Screenshot of all Cloudwatch monitoring graphs](/assets/tube-alert/cloudwatch.png)](/assets/tube-alert/cloudwatch.png)
+
+This is the most valuable way to see immediately how the application is performing, and has become the original way to notice when there is an issue. Once setup it very quickly highlighted an issue with the Lambda functions due to containers.
 
 ### Note about Lambda containers
-Lambda functions run in containers. To improve start-up performance AWS may keep the container around once your function completes. Then if you run the function again your application is already bootstrapped. You can't guarantee it bit those containers may stick around for up to 24 hours.
+Lambda functions run in containers. To improve start-up performance AWS may keep the container around once your function completes. Then if you run the function again your application is already bootstrapped. You can't guarantee it but those containers may stick around for up to 24 hours. This is particularly likely if your function runs fairly often (such as the TubeAlert Fetch function running every 2 minutes).
 
 In Nodejs this means if you set a variable in the scope of the file, it will still be set on the next invocation. Therefore the TubeAlert DI (Dependency Injection) container was written to instantiate new objects each time the function is run, rather than creating them once at the top of the file. As an illustration:
 
@@ -764,11 +899,9 @@ Another side effect is that memory leaks are a more pressing concern. During dev
 
 There was an investigation into the code to ensure no data was hanging around unnecessarily. However, libraries or processes outside of the function (such as growing log files perhaps) are out of your control.
 
-Lambda allows you to choose and amount of memory allocated to your function. Originally this was set to 128MB for all functions. Although the logs were showing the `fetch` function usage as being well below that the slowdowns and timeouts were still occurring. It seems that the underlying CPU, network and disk performance are correlated (though not declared) to your choice of memory allocation. By upping the allocation to 256MB the `fetch` function now sits mostly under ~1000ms. The timeout was also increased to 10 seconds but it now never reaches that. The lambda errors graph is now mostly flat.
+Lambda allows you to choose an amount of memory allocated to your function. Originally this was set to 128MB for all functions. Although the logs were showing the `fetch` function usage as being well below that, the slowdowns and timeouts were still occurring. It seems that the underlying CPU, network and disk performance are correlated (though not declared) to your choice of memory allocation. By upping the allocation to 256MB the `fetch` function now sits mostly under ~1000ms. The timeout was also increased to 10 seconds but it now never reaches that. The Lambda errors graph is now mostly flat.
 
-[![Screenshot of all Cloudwatch monitoring graphs](/assets/tube-alert/cloudwatch.png)](/assets/tube-alert/cloudwatch.png)
-
-We can take advantage of the container behaviour. For the `latest` endpoint we know that any requests with 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
+We can take advantage of the container behaviour though. For the `latest` endpoint we know that any requests with 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
 
 The [StatusController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/StatusController.js) stores a cache object outside of the class itself
 ```javascript
@@ -796,28 +929,121 @@ if (statusCache.expires > now) {
 The action does not *rely* on the data being in this cache, but can achieve a small bonus while the container is still alive. 
 
 ### Tests
+TubeAlert is using [Jest](https://facebook.github.io/jest/) as the testing framework. It offers useful mocking functionality.
+As the TubeAlert application has been building using Dependency Injection it is very easy to test individual files.
+
+The [test for the SubscriptionModel](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/tests/models/Subscription.test.js) demonstrates this. First the Model is constructed with its dependencies. However, those dependencies in this scenario are mocks, provided by Jest. Here for example we mock the DocumentClient:
+
+```javascript
+const mockQueryFunction = jest.fn();
+
+const mockDocumentClient = { query: mockQueryFunction };
+const model = new Subscription(
+  mockDocumentClient,
+  mockBatchWriteHelper,
+  mockTimeSlotsHelper,
+  mockLogger
+);
+```
+
+Then we can test that the `subscribeUser` method will call that client with the correct inputs:
+
+```javascript
+return model.subscribeUser('userID1', 'lineID1', 'timeslots', 'subscription1', 'now')
+    .then(() => {
+      expect(mockQueryFunction).toBeCalledWith({
+        TableName: 'tubealert.co.uk_subscriptions',
+        KeyConditionExpression: '#user = :user',
+        ExpressionAttributeNames: {
+          '#line': 'Line',
+          '#user': 'UserID',
+        },
+        ExpressionAttributeValues: {
+          ':line': 'lineID1',
+          ':user': 'userID1',
+        },
+        FilterExpression: '#line = :line',
+      });
+    });
+```
+
+This checks that the DynamoDB will be called with the correct query, without actually making that query. Dependency Injection makes these true **unit** tests possible.
+
+## Building the front end (React & Webpack)
+
+### Package management
+TubeAlert uses [Yarn](https://yarnpkg.com/) for package management. As with NPM, this uses a [`package.json`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/package.json) file. We have been careful to ensure that the packages are correctly in `require` or `require-dev` as required. This is so that before live deployment any packages in `require-dev` and be stripped out. This makes a big difference to the Lambda functions. Without this step they are over 50MB, compared to 5MB after the purge.
+
+### App initialisation
+The application is built using [React](https://facebook.github.io/react/) and [Redux](http://redux.js.org/docs/introduction/), utilising JSX and ES2015 syntax. Therefore, in order to be recognised by the browsers these need to be compiled using [Babel](https://babeljs.io/).
+
+CSS for the application is written using [Sass](http://sass-lang.com/), so this also needs to be compiled.
+
+In order to do this compilation Webpack was chosen. The client side React application begins with an entry point, which is [`client.js`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/client.js). In this file, the application initialisation happens:
+
+```javascript
+if (window.fetch) {
+  init(4); // version number
+}
+```
+
+The `window.fetch` check is a "[Cutting the mustard](http://responsivenews.co.uk/post/18948466399/cutting-the-mustard)" check. The client side application will only activate in browsers that support `fetch`. Other browsers remain on the server rendered version of the site requiring full refreshes to change page. This requires Server Side Rendering which we'll talk about later, and is key to the Progressive Enhancement goal.
+
+```javascript
+const savedLines = getLines();
+if (savedLines.length > 0) {
+  // read the saved lines and go and fetch newer asynchronously
+  store.dispatch(readLines());
+} else {
+  // first time visit, use the embedded data (save a second call)
+  const lines = JSON.parse(document.getElementById('js-app-bundle').dataset.lines);
+  store.dispatch(setLines(lines));
+}
+```
+
+The first thing the application does in the `init` function is check for the existance of TubeLine status data in [LocalStorage](https://developer.mozilla.org/en/docs/Web/API/Window/localStorage). In order to facilitate Offline viewing later, we need to store the website data somewhere. Therefore it is stored in LocalStorage and retrieved immediately on application start.
+
+If data was found in LocalStorage it is dispatched to the [Redux store](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/redux/actions/line-actions.js) `readLines` action. This action will read the data out of LocalStorage first of all and allow the application to build.
+
+```javascript
+export const readLines = () => (dispatch) => {
+  dispatch(receiveLinesUpdate(getLines()));
+  dispatch(fetchLines());
+};
+```
+
+Obviously, the data in LocalStorage will get out of date very quickly so a call to `fetchLines` is dispatched. This makes a call to the `/latest` endpoint and updates the application from the result (as well as updating the data in LocalStorage).
+
+If there was nothing in LocalStorage then this is likely your first visit to the website. In this scenario the application starts using the Line status data that was embedded in the webpage which came from the server. This allows the page to render instantly without waiting for completion a second HTTP call, off to the `/latest` endpoint.
+
+This means there are three different places the initial data for the application can come from: LocalStorage, `/latest` endpoint, embedded JSON. The application will also make a call to `/latest` every two minutes while the window is open to ensure it remains up to date. This is the main reason Redux was chosen as a technology. With Redux the application doesn't have to care *where* the data is coming from. When it arrives from any source it dispatches an event and the application updates.
+
+Now that the application has data it can start up React. The template provided by the server will have an element that can be targeted by `ReactDom` (`<div id="webapp"></div>`):
+
+```javascript
+ReactDOM.render(
+  <Provider store={store}>
+    {Routes}
+  </Provider>,
+  document.getElementById('webapp')
+);
+```
+
+`<Provider>` is the Redux wrapper. The first part of the Application to render is of course `Routes`
+
+### Routing
+
+### Component controllers
+
+### Stateless immutable componrnenets?
 
 
-## Building the front end (React)
-
-Babel for JSX and ES6
-Entry point `client.js`
 CSS / Images
 Manifest file
 Build folder
 
-## Deployment pipeline
-Travis
-`yarn test`
-`yarn prod`
-`yarn build`
-`yarn sw`
-`serverless deploy`
-`s3 deploy` (long cache)
-`s3 deploy` (short cache)
 
-
-## S3 Bucket setup
+### S3 Bucket setup
 Cloudflare is setup in front of **https://static.tubealert.co.uk**. In order to support this the bucket name must be the same as the domain. Cloudflare DNS is setup like so...
 
 The bucket itself is setup via the [`Resources`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/serverless.yml#L212-L229) section of the `serverless.yml` config. This is simply Cloudformation config.
@@ -850,11 +1076,7 @@ LifecycleConfiguration:
       Status: Enabled
 ```
 
-This deletes any files that are older than one month. The Travis job is then setup to rebuild the application every week, which will redeploy the files still in use and reset their one month clock. This gives the Travis build 4 chances before files are lost so any issues have plenty of time to alert and be fixed.
-
-The Travis build can specify the cache-control headers the files will have when it puts them on S3. For these files it is set to 37556000 seconds (1 year - todo check)
-
-Some files have a fixed name and therefore can't be cached for that long. Therefore there needs to be a separate Travis deploy section to upload these files from a separate `static-low-cache` folder and only specify a 10 minute cache.
+This deletes any files that are older than one month, so we will need to make sure we redeploy the files still in use and reset their one month clock before that expires.
 
 
 ### Webpack setup
@@ -874,6 +1096,25 @@ This simply builds the service worker. The service worker needs to know the hash
 
 
 
+## Deployment pipeline
+Travis
+`yarn test`
+`yarn prod`
+`yarn build`
+`yarn sw`
+`serverless deploy`
+`s3 deploy` (long cache)
+`s3 deploy` (short cache)
+
+ This gives the Travis build 4 chances before files are lost so any issues have plenty of time to alert and be fixed.
+ 
+ 
+The Travis build can specify the cache-control headers the files will have when it puts them on S3. For these files it is set to 37556000 seconds (1 year - todo check)
+
+Some files have a fixed name and therefore can't be cached for that long. Therefore there needs to be a separate Travis deploy section to upload these files from a separate `static-low-cache` folder and only specify a 10 minute cache.
+
+
+
 
 ## Making it a Progressive Web App
 
@@ -885,12 +1126,12 @@ This simply builds the service worker. The service worker needs to know the hash
 Page wrapper.
 
 
-In the Lambda function the Node cannot understand JSX syntax, so the code is compiled through Babel and put into `build/app.js` which is imported into [WebappController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js)
+In the Lambda function Node cannot understand JSX syntax, so the code is compiled through Babel and put into `build/app.js` which is imported into [WebappController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js)
 ```javascript
 const App = require('../../build/app.js'); // Load the compiled App entry point
 ```
 
-The status data is entered, and passed straight into redux. Redux allows the application to not have to care where the data source is.
+The status data is fetched, and passed straight into redux. Redux allows the application to not have to care where the data source is.
 
 ### Service worker
 
@@ -1040,7 +1281,8 @@ self.addEventListener('fetch', (event) => {
 
 ## Push notifications
 
-### Server-side
+
+
 ### Client-side
 <video class="prose__video" muted loop controls>
     <source
@@ -1053,5 +1295,11 @@ self.addEventListener('fetch', (event) => {
 
 
 
+### Server-side
 
 
+## Juggling domains
+
+
+
+All the code is on github.
