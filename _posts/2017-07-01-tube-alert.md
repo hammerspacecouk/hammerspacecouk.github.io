@@ -89,7 +89,7 @@ These are the five main bits of data the application is concerned with:
 * Subscription - said subscription for a day and time slot
 * Notification - when a user is to be notified of a disruption to a line
 
-This domain structure and the clear relationships within it would normally give rise to a SQL database, as that is what they are best at. However the cost and maintenance constraint means using DynamoDB, which is a NoSQL database, so we need to think differently about how to structure this.
+This domain structure and the clear relationships within it would normally give rise to a relational (SQL) database, as that is what they are best at. However the cost and maintenance constraint means using DynamoDB, which is a NoSQL database, so we need to think differently about how to structure this.
 
 In DynamoDB each table needs a **Partition key**. Optionally each table can have a **Sort key**. The **Primary key** is based on either just the **Partition key** or the combination of **Partition key** and **Sort key**. It must be unique within the table.
 
@@ -97,7 +97,6 @@ You can only `Query` for a list of items where they share the same **Partition k
 
 ### DynamoDB structure
 
-(todo provisioning. add the chosen provision values to each table description)
 With these considerations we arrive at the following DynamoDB structure:
 
 #### Statuses table
@@ -187,7 +186,7 @@ Four of the Lambda functions are triggered via a HTTP request from a user. In or
 Two S3 buckets are setup. One is internal, which is used to host the code of our Lambda functions. The other bucket is public for the website static assets, such as CSS and JavaScript, and is accessed by the browser.
 
 ## Building the Lambda functions (Node & Serverless)
-Note, all code for the application can be found on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
+All code for the application can be found on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
 
 There will be 7 Lambda functions, but most of them will share a lot of base code. Therefore we want to actually make the whole thing one application with multiple entry points.
 
@@ -440,7 +439,7 @@ DeleteRequest: {
 }
 ```
 
-The result in an array of operations for DynamoDB. With one for every hour of the week this could be up to 168 operations in one request. If we were to loop through each of them individually our requests would likely time out. Luckily DynamoDB supports a `BatchWrite` operation, allowing up to 25 at one time. The [BatchWriteHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/BatchWriteHelper.js) has been written to do this. It takes an array of operations and breaks it into chunks of 25 to perform a `BatchWrite`. If, for any reason, one of the operations failed it is put back into the list to try again. It does all this using a recursive loop.
+The result is an array of operations for DynamoDB. With one for every hour of the week this could be up to 168 operations in one request. If we were to loop through each of them individually our requests would likely time out. Luckily DynamoDB supports a `BatchWrite` operation, allowing up to 25 at one time. The [BatchWriteHelper](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/helpers/BatchWriteHelper.js) has been written to do this. It takes an array of operations and breaks it into chunks of 25 to perform a `BatchWrite`. If, for any reason, one of the operations failed it is put back into the list to try again. It does all this using a recursive loop.
 
 ```javascript
 makeRequests(requests, inputTotal) {
@@ -732,7 +731,7 @@ For functions that require input (such as the subscribe/unsubscribe `POST` event
 
 The serverless framework can be used to [deploy your Lambda functions](https://serverless.com/framework/docs/providers/aws/cli-reference/deploy/) to AWS, rather than uploading them manually via the console. This involves zipping all of your application code and uploading it to S3 in the `deploymentBucket` you specifiy in your yaml. This is then used to setup the Lambda functions so need to contain all code your functions require. This means it must include your `node_modules`, so the deployment has to happen after `npm/yarn install`.
 
-If you have a lot of application code you can find this deployment taking a very long time. To help with this you can exclude certain files from the zip. The lambda functions do not require the test suite for example, do that can be removed. Exclusions are specified in the Yaml.
+If you have a lot of application code you can find this deployment taking a very long time. To help with this you can exclude certain files from the zip. The lambda functions do not require the test suite for example, so that can be removed. Exclusions are specified in the Yaml.
 
 ```yaml
 package:
@@ -901,7 +900,7 @@ There was an investigation into the code to ensure no data was hanging around un
 
 Lambda allows you to choose an amount of memory allocated to your function. Originally this was set to 128MB for all functions. Although the logs were showing the `fetch` function usage as being well below that, the slowdowns and timeouts were still occurring. It seems that the underlying CPU, network and disk performance are correlated (though not declared) to your choice of memory allocation. By upping the allocation to 256MB the `fetch` function now sits mostly under ~1000ms. The timeout was also increased to 10 seconds but it now never reaches that. The Lambda errors graph is now mostly flat.
 
-We can take advantage of the container behaviour though. For the `latest` endpoint we know that any requests with 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
+We can take advantage of the container behaviour though. For the `latest` endpoint we know that any requests within 2 minutes will be the same, as that is the rate the data is fetched from TFL. Therefore Node can store the DynamoDB result in a variable that will persist. Any subsequent calls within two minutes will reuse that data immediately, improving performance and keeping the DyanmoDB usage low.
 
 The [StatusController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/StatusController.js) stores a cache object outside of the class itself
 ```javascript
@@ -972,7 +971,7 @@ This checks that the DynamoDB will be called with the correct query, without act
 ## Building the front end (React & Webpack)
 
 ### Package management
-TubeAlert uses [Yarn](https://yarnpkg.com/) for package management. As with NPM, this uses a [`package.json`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/package.json) file. We have been careful to ensure that the packages are correctly in `require` or `require-dev` as required. This is so that before live deployment any packages in `require-dev` and be stripped out. This makes a big difference to the Lambda functions. Without this step they are over 50MB, compared to 5MB after the purge.
+TubeAlert uses [Yarn](https://yarnpkg.com/) for package management. As with NPM, this uses a [`package.json`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/package.json) file. We have been careful to ensure that the packages are correctly in `require` or `require-dev` as required. This is so that before live deployment any packages in `require-dev` can be stripped out. This makes a big difference to the Lambda functions. Without this step they are over 50MB, compared to 5MB after the purge.
 
 ### App initialisation
 The application is built using [React](https://facebook.github.io/react/) and [Redux](http://redux.js.org/docs/introduction/), utilising JSX and ES2015 syntax. Therefore, in order to be recognised by the browsers these need to be compiled using [Babel](https://babeljs.io/).
@@ -987,7 +986,7 @@ if (window.fetch) {
 }
 ```
 
-The `window.fetch` check is a "[Cutting the mustard](http://responsivenews.co.uk/post/18948466399/cutting-the-mustard)" check. The client side application will only activate in browsers that support `fetch`. Other browsers remain on the server rendered version of the site requiring full refreshes to change page. This requires Server Side Rendering which we'll talk about later, and is key to the Progressive Enhancement goal.
+The `window.fetch` check is a "[Cutting the mustard](http://responsivenews.co.uk/post/18948466399/cutting-the-mustard)" check. The client side application will only activate in browsers that support `fetch`. Other browsers remain on the server rendered version of the site requiring full refreshes to change page. This requires Server Side Rendering which we'll talk about later, and is key to the Progressive Enhancement goal. It means that older browsers can still get the core functionality and we don't have to painstakingly work on backwards compatibility.
 
 ```javascript
 const savedLines = getLines();
@@ -1016,7 +1015,7 @@ Obviously, the data in LocalStorage will get out of date very quickly so a call 
 
 If there was nothing in LocalStorage then this is likely your first visit to the website. In this scenario the application starts using the Line status data that was embedded in the webpage which came from the server. This allows the page to render instantly without waiting for completion a second HTTP call, off to the `/latest` endpoint.
 
-This means there are three different places the initial data for the application can come from: LocalStorage, `/latest` endpoint, embedded JSON. The application will also make a call to `/latest` every two minutes while the window is open to ensure it remains up to date. This is the main reason Redux was chosen as a technology. With Redux the application doesn't have to care *where* the data is coming from. When it arrives from any source it dispatches an event and the application updates.
+This means there are three different places the initial data for the application can come from: LocalStorage, the `/latest` endpoint, or the embedded JSON. The application will also make a call to `/latest` every two minutes while the window is open to ensure it remains up to date. This is the main reason Redux was chosen as a technology. With Redux the application doesn't have to care *where* the data is coming from. When it arrives from any source it dispatches an event and the application updates.
 
 Now that the application has data it can start up React. The template provided by the server will have an element that can be targeted by `ReactDom` (`<div id="webapp"></div>`):
 
@@ -1033,18 +1032,144 @@ ReactDOM.render(
 
 ### Routing
 
-### Component controllers
+TubeAlert is using React Router (v3). There are only three routes to worry about:
+* Home
+* Line
+* Settings
 
-### Stateless immutable componrnenets?
+They all share the same base view so they are under the same Route path.
+
+```javascript
+const routes = (
+  <Router onUpdate={handleUpdate} history={history}>
+    <Route path="/" component={BaseContainer}>
+      <IndexRoute name="index" component={Index} />
+      <Route name="settings" path="/settings" component={SettingsContainer} />
+      <Route name="line" path="/:lineKey" component={LineContainer} />
+    </Route>
+  </Router>
+);
+```
+
+When the application is being run in a browser we want the URL to update as you change view, without a full page refresh. This is achieved with the browser [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API). React router supports this as the `browserHistory` object. We would want to use that with `history={browserHistory}`, but that isn't supported on the server. The application checks to see if it's on the server, and sets the `history` variable as appropriate. It does this by checking for the presence of the `window` object, which will only exist in the client browser.
+ 
+ ```javascript
+const isBrowser = (typeof window !== 'undefined');
+const history = isBrowser ? browserHistory : null;
+```
+
+If we are on the server then the history object will be set to null, as we don't need history to be supported for a single request->response action. When in the browser React router will also handle clicks of the back button. Due to the way the page is designed this action feels more correct if the view is taken back to the top of the page on each transition. `onUpdate` has a handler to achieve this.
+
+```javascript
+const handleUpdate = () => {
+  if (isBrowser) {
+    window.scrollTo(0, 0);
+  }
+};
+```
+
+### Containers
+
+The React application is setup with (Stateless Functional Components)[https://hackernoon.com/react-stateless-functional-components-nine-wins-you-might-have-overlooked-997b0d933dbc]. With this methodology the hard work and state calculations happen in a *Container*, and the view *Component* itself is a pure JavaScript object that accepts props and builds the HTML view.
+
+Therefore, the routes call the appropriate *Container* classes. The [`BaseContainer`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/containers/BaseContainer.jsx) is a wrapper around the whole application and handles data common to all views. As all views contain the list of all lines, this is where that data is processed.
+
+The export of the `BaseContainer` class is wrapped in the Redux `connect` method:
+
+```javascript
+export default connect(
+    storeProp => ({
+      lines: storeProp.linesState.lines
+    })
+)(BaseContainer);
+```
+
+This allows the Redux store to provide the line data that will be used. When being loaded on the client side, the application will need to poll for new data every 2 minutes. 
+
+```javascript
+componentWillReceiveProps(nextProps) {
+    if (this.props === nextProps ||
+            !this.allowPolling
+        ) {
+      return;
+    }
+    window.clearTimeout(this.timeout);
+    this.timeout = window.setTimeout(
+      () => store.dispatch(fetchLines()),
+      1000 * 60 * 2
+    ); // poll every two minutes
+  }
+```
+
+The `window.setTimeout` function will not work server side, as there is no window object. Therefore, this is prevented from running there by looking for the presence of the window object again: `this.allowPolling = (typeof window !== 'undefined');`
 
 
-CSS / Images
-Manifest file
-Build folder
+The fetching of new data doesn't happen here. Once the timer expires an event is dispatched to the [store](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/redux/actions/line-actions.js), which will make a `fetch` for new data and dispatch a separate event with the results.
 
+```javascript
+export const fetchLines = () => (dispatch) => {
+  dispatch(requestLinesUpdate());
+  return fetch(API_PATH_ALL)
+      .then(response => response.json())
+      .then((data) => {
+        saveLines(data);
+        dispatch(receiveLinesUpdate(data));
+      })
+    .catch(() => {
+      dispatch(receiveLinesUpdate(null));
+    });
+};
+```
+
+The `receiveLinesUpdate` event triggers the `BaseContainer` to be re-rendered with the new data, as the incoming `linesState` prop has now changed.
+
+Once the `BaseContainer` has its data it returns a `<Layout>` component with several props:
+
+```javascript
+return (
+  <Layout
+    lines={this.props.lines}
+    appClass={appClass}
+    innerChildren={this.props.children}
+    warningMessage={<OutOfDateWarningContainer />}
+  />
+);
+```
+
+The [`<Layout>`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/components/Layout.jsx) component is a simple function, rather than a full React component. It accepts the props provided as arguments, and so will be changed by the container when these arguments change. It simply uses this data to return a JSX representation of the HTML required:
+
+```javascript
+const Layout = ({ innerChildren, lines, appClass, warningMessage }) => (
+  <div className={appClass}>
+    <div className="app__main">
+      <div className="app__header header">
+        <header>
+          <div className="header__logo">
+            <Link to="/">TubeAlert</Link>
+...
+```
+
+Any container could use this component, as long as it sets the props as required. As this is the wrapping layout, it contains an `innerChildren` argument, which will be the *Container* for the individual page types.
+
+The [`LineContainer`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/containers/LineContainer.jsx) handles pages at `/:line` URLs, such as `/bakerloo-line` and `/circle-line`. The source of data for the line is available in the store state `linesState` object, so that just has to be filtered to the line in question.
+
+```javascript
+export default connect(
+    (state, props) => ({
+      line: state.linesState.lines.find(line => line.urlKey === props.params.lineKey)
+    })
+)(LineContainer);
+```
+
+The `props.params.lineKey` comes from the routing, and is used to find the line required. The *Line* page has the Subscriptions panel, which has its own [Container](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/containers/NotificationsPanelContainer.jsx). There is quite a lot of logic in this container, as it handles the process of displaying and updating subscriptions.
+
+The subscriptions panel is a table of day columns with row hours. Each cell contains a checkbox to indicate if that hour should be part of the subscription. TubeAlert always makes use of standard elements such as `<a>`, `<input>`, `<label>` and `<button>`, rather than handling clicks on `<div>` or `<span>` elements. This is because the browsers already have stable behaviour on these elements so keyboard support and most accessibility support comes for free. 
+
+## Static assets
+When loading in the browser the webpage will need to load the JavaScript application. It will also need to load the CSS and any images. In order to do this it needs to know where to find them. They are going to be placed on a separate subdomain: **https://static.tubealert.co.uk**
 
 ### S3 Bucket setup
-Cloudflare is setup in front of **https://static.tubealert.co.uk**. In order to support this the bucket name must be the same as the domain. Cloudflare DNS is setup like so...
+Cloudflare is setup in front of **https://static.tubealert.co.uk** to provide caching and HTTPS support. In order to support this the bucket name must be the same as the domain. Therefore the bucket is created as such and the Cloudflare DNS sets up a CNAME as an alias to `static.tubealert.co.uk.s3-website.eu-west-2.amazonaws.com`.
 
 The bucket itself is setup via the [`Resources`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/serverless.yml#L212-L229) section of the `serverless.yml` config. This is simply Cloudformation config.
 CORS is activated on the bucket to allow the front end application (particularly the service worker) to be able to access these assets.
@@ -1058,7 +1183,7 @@ CorsConfiguration:
       AllowedHeaders: ['*']
 ```
 
-AWS recommend that your naming structure of files in your bucket is as spread/random as possible. This is because the files are partitioned to different servers according to filename **(add link)**. If all your files are similar in filename then you risk all your requests coming from the same server which can result in lower performance. A "folder" in S3 is only virtual so it is part of the filename. For this reason our static bucket will not have any folders.
+AWS recommend that your naming structure of files in your bucket is as spread/random as possible. This is because the files are [partitioned to different servers](http://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html) according to filename. If all your files are similar in filename then you risk all your requests coming from the same server which can result in lower performance. A "folder" in S3 is only virtual so it is part of the filename. For this reason our static bucket will not have any folders. It's unlikely TubeAlert will reach the level of traffic that this becomes a concern, but it is a good practice habit to follow.
 
 We want the static files to be cached for a long time (1 year), so the filename contains the hash of the contents. If the contents change then the filename will change. It also solves the AWS sharding recommendations by putting this hash at the front.
 
@@ -1078,69 +1203,225 @@ LifecycleConfiguration:
 
 This deletes any files that are older than one month, so we will need to make sure we redeploy the files still in use and reset their one month clock before that expires.
 
+### CSS & Images
+Sass (SCSS) is used to add structure to building the CSS. [BEM](http://getbem.com/introduction/) is used as a naming strategy, and it is broken up into discrete components using [Atomic Design principles](http://bradfrost.com/blog/post/atomic-web-design/)
 
-### Webpack setup
-Webpack can be set up in various ways. Based on all the needs for the TubeAlert infrastructure there are four webpack configs required. There is also a `webpack.base.config.js` which several of them inherit from (to save repeating the same options every time). The main shared portions of config are to setup Sass, and Babel so that ES2015 class structure and imports can be used
+In order to have the Sass built into CSS it must be included in the webpack entry point `client.js`
+
+```javascript
+import '../src/scss/all.scss';
+```
+
+Notice here how it pulls in [`all.scss`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/scss/all.scss), which in turn pulls in the other Sass components. It can be written so that each React component imports the Sass relevant to itself only, but this became unwieldy to manage and wasn't compatible with server-side rendering. This way only the client entry point knows about the Sass. By default webpack will embed the resulting CSS into the JavaScript, but we want the application to function without JavaScript so we force a separate file:
+
+```javascript
+config.plugins.push(
+  new ExtractTextPlugin('[contenthash].[name].css')
+);
+```
+
+Images also need to be processed by webpack, so that they get a hashed filename. Similar to the Sass, they need to be imported into the `client.js`:
+
+```javascript
+import '../src/imgs';
+```
+
+This pulls in the [`imgs/index.js`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/imgs/index.js) file, which is then responsible for importing all images in the `imgs` folder that the application needs.
+
+The resulting set of images and CSS is created in the `build/static` folder under their hashed names.
+ 
+![Hashed filenames](/assets/tube-alert/hashes.png)
+
+
+### Manifest file
+The hashing of the filename can be set using webpack (e.g `config.output.filename ='[chunkhash].[name].js';` for JavaScript). In order to know where to find those files we need a lookup list so we instruct webpack to build a manifest file.
+
+```javascript
+new ManifestPlugin({
+  fileName : '../assets-manifest.json'
+})
+```
+
+Any references to these files within our application/css, will automatically be recognised by webpack, but our surrounding HTML will need to know the full paths and so will use this manifest file.
+
+### Unhashed files
+The hashed filenames will be able to be cached for a year, as references to them will be updated if anything changes in them. But there are a few files that need predictable filenames, and should not be cached for that long. These are:
+
+* browserconfig.xml (used in Windows to display a tile in the Start menu)
+* manifest.json (used in Android to support adding to homescreen and loading like an app)
+* sw.js (the service worker for offline and push notifications)
+
+Each of these references some of the hashed files, so needs to be parsed by webpack in order to get their true path. Therefore they are placed in a *[templates](https://github.com/hammerspacecouk/tubealert.co.uk/tree/v2.0.0/src/webapp/templates)* folder and imports are included inline, such as
+
+```javascript
+ "src": "<%= require('../../imgs/android-chrome-512x512.png') %>",
+```
+
+Webpack can parse these and put the result in the *build* folder (in a separate `static-low-cache` location):
+
+```javascript
+new HtmlWebpackPlugin({
+  template: path.resolve(__dirname, '../src/webapp/templates/manifest.json'),
+  filename: '../static-low-cache/manifest.json',
+  inject: false
+})
+```
+
+The `sw.js` file is handled differently. The service worker (which we'll discuss more later) will need the full list of assets from the `assets-manifest.json` in order to cache them. Therefore it will have to `import` that file. In order to do this the service worker `sw.js` is used as another webpack entry point with the following at the top:
+
+```javascript
+const assetManifest = require('../build/assets-manifest.json');
+```
+
+Items in the *build* directory are now ready to be uploaded to S3.
+
+
+### Webpack files
+Webpack can be set up in various ways. Based on all the needs for the TubeAlert infrastructure we have identified there are four webpack configs required. There is also a `webpack.base.config.js` which several of them inherit from (to save repeating the same options every time). The main shared portions of config are to setup Sass, and Babel so that ES2015 class structure and imports can be used
 
 #### `webpack.dev.config.js`
-This is used during development and is activated via `yarn dev` or to provide a server `yarn server`. The server makes use of the webpack dev server to offer hot reloading during development. This is needed for convenient development of the React application
+The [`webpack.dev`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/webpack.dev.config.js) file is used during development and is activated via `yarn dev`, or to provide a server `yarn server`. The server makes use of the built in webpack dev server to offer hot reloading during development. This is needed for convenient development of the React application
 
 #### `webpack.prod.config.js`
-This is activated via `yarn prod`. It is run during the Travis build and generates the application JavaScript and CSS. This uses production mode for react and minifies the output to reduce filesize. It creates files named by hash ready for upload to the S3 static location.
+The [`webpack.prod`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/webpack.prod.config.js) file is activated via `yarn prod`. It is run during the build and generates the application JavaScript and CSS. This uses production mode for react and minifies the output to reduce filesize. It creates files in the build folder, named by hash and ready for upload to the S3 static location.
 
 #### `webpack.build.config.js`
-The lambda function for the webapp is running in node, which cannot understand ES2015 imports or JSX syntax natively. Therefore this webpack file builds the app.js for the lambda function. It has a different entry point to the client side version of the application as it needs to return a html response rather than activate a DOM element. This also runs ESLint and will fail the Travis build if there are any issues.
+The lambda function for the webapp is running in Node 6, which cannot understand ES2015 imports or JSX syntax natively. Therefore the [`webpack.build`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/webpack.build.config.js) webpack file builds the app.js for the lambda function and puts it in the build folder (not hashed). It has a different entry point to the client side version of the application as it needs to return a html response rather than activate a DOM element. This also runs ESLint and will fail the build if there are any issues.
 
 #### `webpack.sw.config.js`
-This simply builds the service worker. The service worker needs to know the hashed address of the static assets in order to cache them, so this webpack method will embed the manifest file (generated from `webpack.prod.config.js`) into the service worker itself. As the hash for the assets will be different when there are changes this also means the service worker will update due to the embedded manifest value now having different values.
-
-
+The [`webpack.sw`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/webpack.sw.config.js) file simply builds the service worker. The service worker needs to know the hashed address of the static assets in order to cache them, so this webpack method will embed the manifest file (generated from `webpack.prod.config.js`) into the service worker itself. As the hash for the assets will be different when there are changes this also means the service worker will update due to the embedded manifest value now having different values.
 
 ## Deployment pipeline
-Travis
-`yarn test`
-`yarn prod`
-`yarn build`
-`yarn sw`
-`serverless deploy`
-`s3 deploy` (long cache)
-`s3 deploy` (short cache)
+TubeAlert is using [Travis](https://travis-ci.org/hammerspacecouk/tubealert.co.uk) for the build and deployment process. Setting up Travis is done through the [`.travis.yml`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/.travis.yml) file. We want Travis to run the tests to check everything ok. If that is successful it should deploy the Lambda functions and push the static assets to S3.
 
- This gives the Travis build 4 chances before files are lost so any issues have plenty of time to alert and be fixed.
+First we want to make sure Travis has Serverless installed:
+
+```yaml
+before_script:
+  - yarn global add serverless
+```
+
+Then there are several steps for Travis to run:
+
+```yaml
+script:
+  - yarn install # Install dependencies and create the node_modules folder 
+  - yarn test # Run the test suite (will stop if it fails)
+  - yarn build # Run webpack for server side build/app.js
+  - yarn prod # Run webpack for client side js, css and images
+  - yarn sw # Run webpack to create the service worker
+  - yarn install --production --ignore-scripts --prefer-offline # Clear dependencies only required for dev
+  - serverless deploy # Deploy all the lambda functions
+```
+
+After this has run the Lambda functions have all been updated. Next we need Travis to deploy the static assets to S3. Travis [supports S3 deployment](https://docs.travis-ci.com/user/deployment/s3/) so we can set that up for the build/static folder:
+
+```yaml
+deploy:
+  # Deploy the static assets (1 year lifetime)
+  - provider: s3
+    region: $AWS_REGION
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    bucket: $STATIC_BUCKET
+    skip_cleanup: true
+    acl: public_read
+    cache_control: "max-age=31536000"
+    local_dir: build/static
+```
+
+The required parameters such as `$AWS_REGION` are set in the Travis settings for the application.
+
+Note, the `cache_control` setting is set for one year, so all files uploaded from the source folder (*build/static*) will be set to this. This is why we needed to put the unhashed files in their own separate folder. For those files we have a second set of deploy instructions, so they are only cached for 10 minutes:
+
+```yaml
+  # Deploy the static assets (10 mins lifetime)
+  - provider: s3
+    region: $AWS_REGION
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    bucket: $STATIC_BUCKET
+    skip_cleanup: true
+    acl: public_read
+    cache_control: "max-age=600"
+    local_dir: build/static-low-cache
+```
+
+At the end of this process, the application is successfully deployed.
+
+You will remember we set the S3 bucket to expire files and delete them after 30 days. This is to ensure files no longer in use are cleaned up. Files that are redeployed will reset that clock, so in the Travis settings a cron job is set up to redeploy master every week. This gives the Travis build 4 chances before files are lost so any issues have plenty of time to alert and be fixed.
  
- 
-The Travis build can specify the cache-control headers the files will have when it puts them on S3. For these files it is set to 37556000 seconds (1 year - todo check)
-
-Some files have a fixed name and therefore can't be cached for that long. Therefore there needs to be a separate Travis deploy section to upload these files from a separate `static-low-cache` folder and only specify a 10 minute cache.
-
-
-
-
 ## Making it a Progressive Web App
+
+We'd like the application to be a progressive web app, allowing it to enhance so far as to work offline and be added to the homescreen like a native app can. However, we'd like to take it further, and ensure the application use full progressive enhancement, so it works without any JavaScript at all. In order to do this it needs to support server side rendering.
 
 ### Server side rendering
 
-[`build.jsx`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/build.jsx) entry point
+By rendering on the server the initial perceived performance of the website will always be better than a purely client side solution, as all the content is visible while the JavaScript is still loading and booting. In practice, as our "server" is actually a Lambda function, there is likely to be an initial latency as the function initialises.
 
+The Lambda function handling the URLs arrives in the [`WebappController`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js). This function renders the React webapp and returns a response.
 
-Page wrapper.
-
-
-In the Lambda function Node cannot understand JSX syntax, so the code is compiled through Babel and put into `build/app.js` which is imported into [WebappController](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/controllers/WebappController.js)
+In the Lambda function Node cannot understand JSX syntax, so we can't enter the React application directly. The code is compiled (in `webpack.build.config.js`) through Babel and put into `build/app.js` which is imported into the controller
 ```javascript
 const App = require('../../build/app.js'); // Load the compiled App entry point
 ```
 
-The status data is fetched, and passed straight into redux. Redux allows the application to not have to care where the data source is.
+This webpack config uses a different entry point from the `client.js`. It uses [`build.jsx`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/build.jsx) to handle the differences between browser and server.
 
-### Service worker
+The Controller already fetched the latest status from DynamoDb, so it passed it in as `originalData`
 
-- Cloudflare, caching and HTTPS
+```javascript
+export default (originalData, location, assetsHelper, callback) => {
+  store.dispatch(setLines(originalData));
+```
+
+It is dispatched to the Redux store so it can be picked up by the deeper parts of the application. Next it needs to generate the result of the React application as a HTML string:
+
+```javascript
+ match({ routes, location }, (error, redirectLocation, renderProps) => {
+    const html = ReactDOMServer.renderToString(
+      <Provider store={store}>
+        <RouterContext {...renderProps} />
+      </Provider>
+    );
+```
+
+`match` is the React Router function that can recieve the incoming URL path (`location`) and the usual `routes` and provide the result as `<RouterContext>`. The result is wrapped in `<Provider>` so it has access to the Redux store. The rest of the application after route matching is exactly the same code as the client side, so true Universal JavaScript.
+
+The result of this will be a string in `html` that is the HTML output of the application. This application is expecting to be rendered inside an element such as `<div id="webapp"></div>` but is missing all of the surrounding furniture needed to build a webpage (`<head>`,`<body>` etc), so this file is where we include that. The `callback` is called with the full body:
+
+```javascript
+return callback(`<!DOCTYPE html>
+  <html lang="en-GB">
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>TubeAlert</title>
+      <link rel="stylesheet" href="${assetsHelper.get('app.css')}" />
+      ...
+      </head>
+          <body>
+      ...
+      <div id="webapp">${html}</div>
+            <script src="${assetsHelper.get('app.js')}" 
+              data-lines="${JSON.stringify(originalData).replace(/"/g, '&quot;')}" id="js-app-bundle"></script>
+      ...
+    </body>
+  </html>`
+```
+
+The `assetsHelper` was passed in from the `WebappController` and reads the `assets-manifest.json` to find the fulled hashed path of the desired CSS and JavaScript (so that the client side version of the app loads).
+
+The output of the application is put inside the `<div id="webapp">` element (which is where the client side version is expecting to find it and replace it).
+
+Notice how the `<script>` includes a `data-lines` property with the full line status data. This was used by the client side script on boot to allow it to render without having to go and make a separate call for data.
+
+
+### Service Worker
+
+Using a Service Worker we can make TubeAlert work offline and support push notifications. Service Workers can be quite powerful, so they are restricted in how they can run. First, they have to be served from HTTPS websites. TubeAlert is behind CloudFlare, to facilitate caching and HTTPS on all assets. They also need to be served from the same domain that they are controlling. Therefore, it cannot be served from **https://static.tubealert.co.uk** like the other static assets (even though it exists there after the build). It also cannot have a hashed filename, as browsers will recheck the same file for changes in order to decide when to update. If we had a hashed file name the browser would never find changes.
 
 #### Service worker API Gateway proxy
-Before the service worker can do anything it has to be on the same domain as the application it is controlling. Therefore it can't be served from static like the other static files. It also cannot change its name as the URL location is rechecked fro updates by the browser.
-
-Therefore, even though the file is available on S3 (https://static.tubealert.co.uk/sw.js) it is not served from there. A new API gateway route is setup to be a proxy to that file on S3. The CloudFormation sets up the appropriate IAM permissions to give API Gateway permissions to access the `StaticBucket` on S3:
+Even though the file is available on S3 (https://static.tubealert.co.uk/sw.js) it cannot be served from there as the main site is **https://tubealert.co.uk**. A new API gateway route is setup to be a proxy to that file on S3. In our Serverless `Resources` section we can have a CloudFormation template that sets up the appropriate IAM permissions to give API Gateway permissions to access the `StaticBucket` on S3:
 
 ```yaml
 APIRole:
@@ -1211,6 +1492,8 @@ ServiceWorkerMethod:
       Ref: ApiGatewayRestApi
 ```
 
+With this API Gateway the Service Worker is available at [https://tubealert.co.uk/sw.js](https://tubealert.co.uk/sw.js) and is now allowed to control the webpages.
+
 #### Offline and startup
 <video class="prose__video" muted loop controls>
     <source
@@ -1221,22 +1504,75 @@ ServiceWorkerMethod:
         type="video/mp4">
 </video>
 
-Needs the asset manifest, so it is webpacked
+Using the Service Worker we can make the website act like a native app. In order to do this we have to inform the browser how to store it on the homescreen and we have to cache the assets to work offline.
 
+In order to behave like an app on a users homescreen we need the [manifest file](https://static.tubealert.co.uk/manifest.json) we created earlier. It is defined in the webpage `<head>`:
+
+```html
+<link rel="manifest" href="https://static.tubealert.co.uk/manifest.json" />
+```
+
+It doesn't use one of the hashed URLs as the browser may occasionally recheck it for updates, so the URL must remain the same. There are many [more details on Web App Manifests](https://developer.mozilla.org/en-US/docs/Web/Manifest) but the key parts for our app are speciying the homepage icons and 
+
+```json
+"start_url": "https://tubealert.co.uk/",
+"display": "standalone",
+```
+
+These lines ensure the site will open like an app, so it won't have the browser address bar and buttons. It will also always load the homepage on launch, regardless of which page the user was on when they added to homescreen.
+
+The manifest is enough to make the site *feel* like an app when adding to and launching from the homescreen. However, it requires an internet connection to load anything. By adding the service worker cache we can make it continue to load offline.
+
+The Service Worker is initiliased in (`client.js`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/client.js#L33-L35)
+
+```javascript
+if ('serviceWorker' in window.navigator) {
+  window.navigator.serviceWorker.register(`/sw.js`, {scope:'/'});
+}
+```
+
+Because the manifest is specifying that all launches should go to the homepage, the only files we need to cache are:
+
+* `/` (homepage)
+* `app.css` (the styles to render the application)
+* `app.js` (the application itself)
+
+The latter two are stored by hash so we use the `asset-manifest.json`, which is embedded in the `sw.js` file as it was rendered by webpack.
+
+```javascript
+const VERSION_FORCE = 5;
+const ASSETS_HASH = hashString(JSON.stringify(assetManifest));
+const CACHE_NAME = `tubealertcouk-sw-cache-${VERSION_FORCE}-${ASSETS_HASH}`;
+const STATIC_HOST = 'https://static.tubealert.co.uk/';
+
+// Perform install steps (cache statics)
+self.addEventListener('install', event => event.waitUntil(
+    caches.open(CACHE_NAME)
+        .then(cache =>
+            cache.addAll([
+              '/',
+              `${STATIC_HOST}${assetManifest['app.css']}?sw`,
+              `${STATIC_HOST}${assetManifest['app.js']}?sw`,
+            ])
+        ).then(() => self.skipWaiting())
+));
+```
+
+This caches the three neccessary files, looking them up in the manifest. The `CACHE_NAME` is generated based on a combination of `VERSION_FORCE` (which lets us manually wipe out the cache if we need to) and `ASSETS_HASH` (which is generated based on the `assets-manifest.json` so any changes result in a new cache name).
 
 ### Note about Service Worker Cache and S3
 
-The static assets (CSS and JS) are stored on S3, and cached for a year with HTML headers. We also want to cache them in the service worker so that the application can work offline.
+The static assets (CSS and JS) are stored on S3, and cached for a year with HTML headers. We now also want to cache them in the service worker so that the application can work offline.
 
-However, since the static assets are on a different domain this would encounter CORS issues. No problem, AWS allows you to set CORS headers on your bucket. *BUT* the S3 response will only include those CORS headers if the request contains an `Origin` header.
+However, since the static assets are on a different domain this would encounter [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) issues. No problem, AWS allows you to set CORS headers on your bucket. *BUT* the S3 response will **only** include those CORS headers if the request contains an `Origin` header.
 
-Client side JavaScript calls will include this header, such as the one made in the service worker `cacheAll` call. Linked CSS and JavaScript files included via HTML tags (`<link>`/`<script>`) will not include this header, which is usually fine as they don't need it.
+Client side JavaScript calls will include this header, such as the one made in the service worker `cache.addAll` call. Linked CSS and JavaScript files included via HTML tags (`<link>`/`<script>`) will not include this header, which is usually fine as they don't need it.
 
-What is happening though is the page is being loaded and the assets are being fetched. Those assets respond *without* CORS headers, but with the expected year long `cache-control`. The browser will then put those files into its disk cache (for a year). Next the service worker loads and activates, performing the `cacheAll` command. It attempts to go and fetch the files to be cached, sending the `Origin` header. However, since the files are in the disk cache this call doesn't go to the server. The browser pulls the files from its own cache, sees that there are no CORS headers and rejects the request as insecure. Browsers do not vary their cache based on the presence of the `Origin` header.
+What is happening though is the page is being loaded and the assets are being fetched. Those assets respond *without* CORS headers, but with the expected year long `cache-control`. The browser will then put those files into its disk cache (for a year). Next the service worker loads and activates, performing the `cache.addAll` command. It attempts to go and fetch the files to be cached, sending the `Origin` header. However, since the files are in the disk cache this call doesn't go to the server. The browser pulls the files from its own cache, sees that there are no CORS headers and rejects the request as insecure. Browsers do not vary their cache based on the presence of the `Origin` header.
 
 The solution is to have the service worker call a slightly different URL by adding a query string.
 ```
-https://static.tubealert.co.uk/34135971791.app.js?sw
+https://static.tubealert.co.uk/3c135a71df1.app.js?sw
 ```
 
 This will bypass the browser cache as the URL differs. The backend isn't looking for that query string so the response will be no different.
@@ -1277,11 +1613,13 @@ self.addEventListener('fetch', (event) => {
 });
 ```
 
+---
 
+Now that the Service Worker is caching files correctly it is a Progressive Web app that works offline and loads from the homescreen like any other native app.
 
 ## Push notifications
 
-
+Push notifications are crucial for the name *TubeAlert*. You need to be alerted when a Tube line you care about is disrupted. Having captured your subscription preferences we can send notifications at the right time for the right lines.
 
 ### Client-side
 <video class="prose__video" muted loop controls>
@@ -1293,13 +1631,69 @@ self.addEventListener('fetch', (event) => {
         type="video/mp4">
 </video>
 
+Browser notifications are handled by the Service Worker. The application triggers the setup in [`NotificationsPanelContainer.jsx`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/master/src/webapp/containers/NotificationsPanelContainer.jsx). When a user chooses to subscribe the following code runs:
 
+```javascript
+const swOptions = {
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(
+        '{APPLICATION_KEY}'
+      )
+    };
+
+    window.navigator.serviceWorker.ready
+      .then(serviceWorkerRegistration =>
+        serviceWorkerRegistration.pushManager.subscribe(swOptions)
+      )
+```
+
+`{APPLICATION_KEY}` is the *public key* for the application. We need the corresponding *private key* in order to send notifications to this service worker subscription.
+
+At this point the browser will prompt the user to confirm they are willing to subscribe. If they *Allow* then we are given the subcription information, which we can send to the server for storage.
+
+```javascript
+.then((subscription) => {
+  const postData = {
+    userID: subscription.endpoint,
+    lineID: this.props.line.urlKey,
+    timeSlots: this.state.timeSlots,
+    subscription
+  };
+  return fetch(API_PATH_SUBSCRIBE, {
+    method: 'post',
+    body: JSON.stringify(postData)
+  });
+})
+```
 
 ### Server-side
+The subscription was saved to the DynamoDb table. These consist of an endpoint (usually a domain owned by the browser vendor), and public encryption keys that allow you to send data to this user. In order to send notifications, the data payload has to be encrypted with your private key that matches the public key the subscription was set up with.
+
+Thankfully, we are using the [Web push library](https://github.com/web-push-libs/web-push), which abstracts away the complex encryption procedure. In our [DI.js](https://github.com/hammerspacecouk/tubealert.co.uk/blob/master/src/DI.js) we setup this library with our details, including private key.
+
+```javascript
+WebPush.setVapidDetails(
+  `mailto:${process.env.CONTACT_EMAIL}`,
+  process.env.PUBLIC_KEY,
+  process.env.PRIVATE_KEY
+);
+```
+
+Then in our [`NotifcationModel`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/master/src/models/Notification.js) it is very simple to send the notification.
+
+```javascript
+this.webPush.sendNotification(subscription, payload)
+```
 
 
-## Juggling domains
+## Completion
 
+With all the pieces in place, TubeAlert is ready to receive subscriptions and send notifications. This is all on the open web, and hosting is practically free.
 
+A lot was learned about setting up Universal JavaScript applications, as well as Serverless infrastructure and progressive web apps with Service Worker.
 
-All the code is on github.
+All the code is available to view on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
+
+To discuss this article please contact the author on twitter ([@djmarland](https://twitter.com/djmarland)) or discuss on Reddit in the following threads:
+* one
+* two
