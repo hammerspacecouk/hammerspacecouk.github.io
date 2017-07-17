@@ -21,10 +21,15 @@
     }
 
     .prose__video {
+        display: block;
         max-width: 240px;
-        float: right;
-        margin-left: $size-grid-unit;
-        margin-bottom: $size-grid-unit;
+        margin: 0 auto $size-grid-unit;
+        @include mq($from: m) {
+            float: right;
+            margin-left: $size-grid-unit;
+            margin-right: 0;
+            margin-bottom: $size-grid-unit;
+        }
     }
     img {
         margin-left: auto;
