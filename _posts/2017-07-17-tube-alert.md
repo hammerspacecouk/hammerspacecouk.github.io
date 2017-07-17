@@ -40,8 +40,6 @@ Normally this would dictate the need for a server, but [AWS](https://aws.amazon.
 * [S3](https://aws.amazon.com/s3/) - File storage for static assets
 * [Lambda](https://aws.amazon.com/lambda/) - Runs your code
 
-**todo - add icons here for each**
-
 Each of these operates on a pay-as-you-go basis, and only charge for your actual usage. There are no servers sitting around under-utilised. AWS offer a generous [Free tier](https://aws.amazon.com/free/), especially for DynamoDB and Lambda, so it is possible that the entirety of TubeAlert can function without costing anything.
 
 
@@ -1070,7 +1068,7 @@ const handleUpdate = () => {
 
 ### Containers
 
-The React application is setup with (Stateless Functional Components)[https://hackernoon.com/react-stateless-functional-components-nine-wins-you-might-have-overlooked-997b0d933dbc]. With this methodology the hard work and state calculations happen in a *Container*, and the view *Component* itself is a pure JavaScript object that accepts props and builds the HTML view.
+The React application is setup with [Stateless Functional Components](https://hackernoon.com/react-stateless-functional-components-nine-wins-you-might-have-overlooked-997b0d933dbc). With this methodology the hard work and state calculations happen in a *Container*, and the view *Component* itself is a pure JavaScript object that accepts props and builds the HTML view.
 
 Therefore, the routes call the appropriate *Container* classes. The [`BaseContainer`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/webapp/containers/BaseContainer.jsx) is a wrapper around the whole application and handles data common to all views. As all views contain the list of all lines, this is where that data is processed.
 
@@ -1353,7 +1351,7 @@ You will remember we set the S3 bucket to expire files and delete them after 30 
  
 ## Making it a Progressive Web App
 
-We'd like the application to be a progressive web app, allowing it to enhance so far as to work offline and be added to the homescreen like a native app can. However, we'd like to take it further, and ensure the application use full progressive enhancement, so it works without any JavaScript at all. In order to do this it needs to support server side rendering.
+We'd like the application to be a progressive web app, allowing it to enhance so far as to work offline and be added to the homescreen like a native app can. However we'd like to take it further and ensure the application uses full progressive enhancement, so it works without any JavaScript at all. In order to do this it needs to support server side rendering.
 
 ### Server side rendering
 
@@ -1523,7 +1521,7 @@ These lines ensure the site will open like an app, so it won't have the browser 
 
 The manifest is enough to make the site *feel* like an app when adding to and launching from the homescreen. However, it requires an internet connection to load anything. By adding the service worker cache we can make it continue to load offline.
 
-The Service Worker is initiliased in (`client.js`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/client.js#L33-L35)
+The Service Worker is initiliased in [`client.js`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/webpack/client.js#L33-L35)
 
 ```javascript
 if ('serviceWorker' in window.navigator) {
@@ -1669,7 +1667,7 @@ At this point the browser will prompt the user to confirm they are willing to su
 ### Server-side
 The subscription was saved to the DynamoDb table. These consist of an endpoint (usually a domain owned by the browser vendor), and public encryption keys that allow you to send data to this user. In order to send notifications, the data payload has to be encrypted with your private key that matches the public key the subscription was set up with.
 
-Thankfully, we are using the [Web push library](https://github.com/web-push-libs/web-push), which abstracts away the complex encryption procedure. In our [DI.js](https://github.com/hammerspacecouk/tubealert.co.uk/blob/master/src/DI.js) we setup this library with our details, including private key.
+Thankfully, we are using the [Web push library](https://github.com/web-push-libs/web-push), which abstracts away the complex encryption procedure. In our [DI.js](https://github.com/hammerspacecouk/tubealert.co.uk/blob/master/src/DI.js) we setup this library with our details, including *private key*.
 
 ```javascript
 WebPush.setVapidDetails(
