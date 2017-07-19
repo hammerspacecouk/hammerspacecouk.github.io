@@ -278,7 +278,7 @@ WebPush.setVapidDetails(
 ### Models
 
 #### Status model
-The [Status model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Status.js) is responsible for fetching Line Status data from TFL and storing it in the Statues DynamoDB table. The [`fetchNewLatest`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Status.js#L29-L41) method makes a HTTP request to TFL for the line data. 
+The [Status model](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Status.js) is responsible for fetching Line Status data from TFL and storing it in the Statuses DynamoDB table. The [`fetchNewLatest`](https://github.com/hammerspacecouk/tubealert.co.uk/blob/v2.0.0/src/models/Status.js#L29-L41) method makes a HTTP request to TFL for the line data. 
 
 ```javascript
 fetchNewLatest() {
