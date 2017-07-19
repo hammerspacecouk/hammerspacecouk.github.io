@@ -7,7 +7,9 @@ author:
 image: /assets/tube-alert/banner.svg
 ---
 
-[TubeAlert](https://tubealert.co.uk) is a web site intended to be a quick indicator of the status of the [London Underground](https://tfl.gov.uk/). It has a no-nonsense interface to give the answer immediately. It also allows the user to subscribe to a tube line and time slot to be alerted to any disruptions. It is all built on the open web from a simple webpage with progressive enhancement up to full progressive web app that can be added to the home screen. The goal was to build the full feature-set as cheaply as possible. This article documents the techniques and tactics used as well as the technologies in play such as NodeJS, React, Webpack, Serverless, Travis, AWS Lambda / S3 / DynamoDb / Cloudformation / Cloudwatch.
+[TubeAlert](https://tubealert.co.uk) is a web site intended to be a quick indicator of the status of the [London Underground](https://tfl.gov.uk/). It has a no-nonsense interface to give the answer immediately. It also allows the user to subscribe to a tube line and time slot to be alerted to any disruptions. It is all built on the open web from a simple webpage with progressive enhancement up to full progressive web app that can be added to the home screen. The goal was to build the full feature-set as cheaply as possible. This article is a case study documenting the techniques and tactics used as well as the technologies in play such as NodeJS, React, Service worker, Webpack, Serverless, Travis, AWS Lambda / S3 / DynamoDb / Cloudformation / Cloudwatch.
+
+All the code is on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
 
 [![Screenshot of the TubeAlert website](/assets/tube-alert/screenshot.png)](https://tubealert.co.uk)
 
@@ -1693,5 +1695,5 @@ A lot was learned about setting up Universal JavaScript applications, as well as
 All the code is available to view on [Github](https://github.com/hammerspacecouk/tubealert.co.uk).
 
 To discuss this article please contact the author on twitter ([@djmarland](https://twitter.com/djmarland)) or discuss on Reddit in the following threads:
-* one
-* two
+* [/r/javascript](https://www.reddit.com/r/javascript/comments/6oapfx/building_a_universal_node_react_serverless/)
+* [/r/aws](https://www.reddit.com/r/aws/comments/6oart7/building_a_serverless_progressive_web_site_with/)
