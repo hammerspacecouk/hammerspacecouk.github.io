@@ -4,9 +4,19 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#222222">
+
     <title>{% if page.title %}{{page.title}} | {% endif %}Hammerspace</title>
+    <meta property="og:site_name" content="Hammerspace" />
+    <meta property="og:title" content="{% if page.title %}{{page.title}} | {% endif %}Hammerspace" />
+    <meta property="og:type" content="{% if page.layout == 'post' %}article{% else %}website{% endif %}" />
+    <meta property="og:description" content="Making web based experiences" />
+    <meta property="og:image" content="https://www.hammerspace.co.uk{% if page.image %}{{page.image}}{% else %}/assets/logo.png{% endif %}" />
+    <meta property="og:image:type" content="image/png" />
+
     <link href="https://fonts.googleapis.com/css?family=Raleway:400,700" rel="stylesheet" />
     <link href='/styles.css' rel='stylesheet' type='text/css' />
+    <link rel="canonical" href="https://www.hammerspace.co.uk{{page.url}}" />
 </head>
 <body>
 <header>

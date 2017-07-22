@@ -1,0 +1,36 @@
+.homepage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__content {
+    width: 100%;
+    padding: 32px 16px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  &__logo {
+    fill: $color-body-link;
+    transition: fill 1s linear;
+    &:hover {
+      fill: $color-body-link-hover;
+    }
+  }
+
+  &__contact {
+    margin-top: - ($size-grid-unit*2);
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  &__contact-link {
+    color: $color-body-text;
+  }
+
+  &__projects {
+    margin-top: $size-grid-unit * 2;
+    text-align: center;
+  }
+}
