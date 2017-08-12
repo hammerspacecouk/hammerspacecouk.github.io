@@ -37,14 +37,8 @@ ul {
 }
 
 a {
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    text-decoration: none;
-    &:hover,
-    &:active,
-    &:focus {
-        text-decoration: underline;
-    }
+    text-decoration: underline;
+    text-decoration-skip: ink;
 }
 
 code {
