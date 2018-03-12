@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+    <g class="hex-grid">
+        <defs>
+            <style>.hex-grid polygon {fill:transparent; stroke-width: 2px;stroke:hsl(0, 1%, 72%)}</style>
+            <pattern id="grid-pattern" height="173.20508075688775" width="100" patternUnits="userSpaceOnUse">
+                <polygon
+                        points="50,28.867513 0,57.735027 -50,28.867513 -50,-28.867513 0,-57.735027 50,-28.867513"></polygon>
+                <polygon
+                        points="150,28.867513 100,57.735027 50,28.867513 50,-28.867513 100,-57.735027 150,-28.867513"></polygon>
+                <polygon
+                        points="100,115.470054 50,144.337567 0,115.470054 0,57.735027 50,28.867513 100,57.735027"></polygon>
+                <polygon
+                        points="50,202.072594 0,230.940108 -50,202.072594 -50,144.337567 0,115.470054 50,144.337567"></polygon>
+                <polygon
+                        points="150,202.072594 100,230.940108 50,202.072594 50,144.337567 100,115.470054 150,144.337567"></polygon>
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-pattern)"></rect>
+    </g>
+</svg>

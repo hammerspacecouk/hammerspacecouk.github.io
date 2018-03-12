@@ -1,36 +1,75 @@
 .homepage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &__content {
-    width: 100%;
-    padding: 32px 16px;
-    max-width: 640px;
-    margin-left: auto;
-    margin-right: auto;
+  .header {
+    margin: 0;
   }
 
-  &__logo {
-    fill: $color-body-link;
-    transition: fill 1s linear;
-    &:hover {
-      fill: $color-body-link-hover;
+  &__max {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  &__slice {
+    padding: 48px 16px;
+    background: #f2f2f2;
+    color: hsl(0, 0%, 35%);
+  }
+
+  &__tube {
+    padding: 16px;
+    background-image: url('/assets/tube-alert/banner.svg');
+    background-size: cover;
+    background-position: 50% 50%;
+  }
+  &__tube-inner {
+    position: relative;
+    max-width: 860px;
+    margin: 0 auto;
+    min-height: 200px;
+  }
+  &__tube-box {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: hsla(0, 0%, 13%, 0.9);
+    color: #fff;
+    text-decoration: none;
+    padding: 16px;
+  }
+
+  &__cargo {
+    padding: 16px;
+    background-color: hsl(208, 52%, 56%);
+    background-image: url('/assets/cargo.svg');
+    background-size: cover;
+  }
+  &__cargo-inner {
+    position: relative;
+    max-width: 860px;
+    margin: 0 auto;
+    min-height: 200px;
+  }
+  &__cargo-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: hsla(0, 0%, 13%, 0.9);
+    color: #fff;
+    text-decoration: none;
+    padding: 16px;
+  }
+
+  &__more {
+    padding: 48px 16px;
+  }
+
+  &__more-contents {
+    max-width: 860px;
+  }
+
+  @media (min-width: 50em) {
+    &__cargo-box,
+    &__tube-box {
+      max-width: 60%;
     }
-  }
-
-  &__contact {
-    margin-top: - ($size-grid-unit*2);
-    text-align: right;
-    line-height: 1.4;
-  }
-
-  &__contact-link {
-    color: $color-body-text;
-  }
-
-  &__projects {
-    margin-top: $size-grid-unit * 2;
-    text-align: center;
   }
 }
