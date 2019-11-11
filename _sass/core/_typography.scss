@@ -28,7 +28,7 @@ h1, h2, h3, h4, h5, h6,
     .b {  @include font-sizes(32px, 36px);  }
     .c {  @include font-sizes(24px, 28px);  }
     .d {  @include font-sizes(20px, 24px);  }
-    .e {  @include font-sizes(16px, 22px); letter-spacing: 0.5px;  }
+    .e {  @include font-sizes(18px, 22px); letter-spacing: 0.5px;  }
     .f {  @include font-sizes(14px, 18px);  }
 }
 
