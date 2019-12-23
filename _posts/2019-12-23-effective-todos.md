@@ -104,3 +104,9 @@ it('should convert legacy users' () => {
 ```
 
 So that's a few tips for writing effective todos. Obviously you can choose whichever syntax works for you, but if you remain consistent you will feel like they are under control and they will be understandable weeks, months or even years in the future.
+
+---
+
+To discuss this article please contact the author on twitter ([@djmarland](https://twitter.com/djmarland/status/1209193364446420998)) or discuss on Reddit in the following threads:
+* [/r/javascript](https://www.reddit.com/r/javascript/comments/eep81n/writing_effective_todo_comments/)
+* [/r/coding](https://www.reddit.com/r/coding/comments/eep7u4/writing_effective_todo_comments/)
