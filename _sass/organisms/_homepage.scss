@@ -30,7 +30,13 @@
   }
 
   &__projects {
+    list-style: none;
     margin-top: $size-grid-unit * 2;
     text-align: center;
+    > li:not(:last-child) {
+      border-bottom: solid 1px #777;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }
   }
 }
