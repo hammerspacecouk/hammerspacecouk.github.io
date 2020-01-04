@@ -57,3 +57,7 @@ pre code {
     white-space: pre-wrap;
     background: $color-grey-darkest;
 }
+blockquote {
+    border-left: solid $size-grid-unit-small $color-body-link;
+    padding-left: $size-grid-unit;
+}
