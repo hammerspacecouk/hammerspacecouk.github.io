@@ -8,6 +8,9 @@ image: /assets/effective-todos/banner.svg
 ---
 
 “Todo” comments are inevitable part of development. Not all problems can be solved right away and so you find yourself stating `//todo` in a hope that you’ll come back to it.
+
+In an ideal world these kind of tasks would be captured in your issue tracker and properly scheduled for fixing, but in practice that doesn't happen. Either because it seems too small, is blocked by something else, or it feels like it contextually belongs next to the code.
+
 Months or years later you encounter the line `// todo – fix this` but you don’t know how. You reach for `git blame` only to find that you yourself wrote it. “Curse you, past me!”
 
 It’s important to write todo comments in a way that’ll be most effective in getting them removed later. No todo should be immortal. These are potential practices to help with that aim.
