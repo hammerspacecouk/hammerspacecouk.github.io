@@ -19,16 +19,6 @@
     }
   }
 
-  &__contact {
-    margin-top: - ($size-grid-unit*2);
-    text-align: right;
-    line-height: 1.4;
-  }
-
-  &__contact-link {
-    color: $color-body-text;
-  }
-
   &__projects {
     list-style: none;
     margin-top: $size-grid-unit * 2;
